@@ -1,0 +1,149 @@
+/* Login.css */
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background-color: #fff;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+/* Header */
+.brand-title {
+  color: #ff6b00; /* Màu cam chủ đạo */
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.brand-subtitle {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+/* Form */
+.login-inner-form {
+  text-align: left;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #ff6b00;
+}
+
+/* Nút Login chính */
+.btn-login-main {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(90deg, #ff8a00, #ff6b00);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.3s;
+}
+
+.btn-login-main:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Links & Divider */
+.login-links {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #444;
+}
+
+.link-orange {
+  color: #ff6b00;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.divider {
+  margin: 25px 0;
+  position: relative;
+  border-top: 1px solid #eee;
+}
+
+.divider span {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 0 15px;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Social Login */
+.social-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.social-btn:hover {
+  background-color: #f9f9f9;
+  border-color: #ccc;
+}
+
+.icon-google { color: #ea4335; }
+.icon-facebook { color: #1877f2; }
+.icon-github { color: #333; }

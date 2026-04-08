@@ -1,0 +1,161 @@
+/* header.css */
+
+.header {
+  background-color: var(--bg-white);
+  width: 100%;
+}
+
+/* --- TOP BAR --- */
+.top-bar {
+  background-color: rgb(77, 18, 27);
+  border-bottom: 1px solid var(--border-color);
+  display: none;
+  justify-content: space-between;
+  font-size: 8px;
+  color: var(--color-text-muted);
+}
+
+.top-left {
+  width: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 15px;
+}
+
+.top-left spans{
+  display: flex;         /* Sử dụng Flexbox để icon và chữ song song */
+  align-items: center;   /* Căn giữa icon và chữ theo chiều dọc */
+  gap: 8px;              /* Tạo khoảng cách giữa icon và chữ */
+  white-space: nowrap;   
+  flex-shrink: 0;        
+}
+.top-right {
+  display: flex;
+  align-items: center;     /* căn giữa theo chiều dọc */
+  justify-content: center; /* căn giữa theo chiều ngang */
+  gap: 10px;
+}
+.top-right a {
+  display: flex;
+  align-items: center;   /* icon + chữ thẳng hàng */
+  justify-content: center;
+  gap: 6px;
+  /* padding: 6px 12px; */
+  border-radius: 6px;
+  text-decoration: none;
+
+  font-size: 18px;
+  font-weight: 500;
+
+  transition: 0.2s;
+}
+.icon-blue {
+  color: var(--color-primary);
+}
+
+/* --- MAIN HEADER --- */
+.main-header {
+  padding: 0px 0%;
+  display: flex;
+  flex-direction: column; /* Mặc định mobile xếp dọc */
+  gap: 15px;
+}
+
+/* Nhóm Logo và Search */
+.header-middle-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex: 1;
+}
+
+.logo img {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+
+.search-box {
+  flex: 1; /* Tự co giãn chiếm hết diện tích còn lại */
+  display: flex;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 40px;
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  padding: 0 15px;
+  outline: none;
+  font-size: 14px;
+}
+
+.search-box button {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0 15px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.search-box button:hover {
+  background: var(--color-primary-dark);
+}
+
+/* --- MENU NAVIGATION --- */
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.menu link {
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-main);
+  white-space: nowrap;
+}
+
+.cart-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary) !important;
+}
+
+/* --- RESPONSIVE CHO TABLET (>= 768px) --- */
+@media (min-width: 880px) {
+  .top-bar {
+  background-color: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 5%;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+  .header{
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .main-header {
+    flex-direction: row; /* Tablet trở lên: Logo/Search và Menu nằm trên 1 hàng lớn */
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-middle-section {
+    max-width: 60%; /* Giới hạn độ rộng của cụm Logo+Search */
+  }
+  .menu {
+    overflow: visible;
+    padding-bottom: 0;
+  }
+}

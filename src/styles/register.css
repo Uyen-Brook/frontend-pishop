@@ -1,0 +1,141 @@
+/* Register.css */
+
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 20px;
+  background-color: #fff;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 500px; /* Tăng nhẹ chiều rộng cho form đăng ký */
+  padding: 35px;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+.auth-title {
+  color: #ff6b00;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  color: #8a8a8a;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+
+/* Form Styling */
+.auth-form {
+  text-align: left;
+}
+
+.input-field {
+  margin-bottom: 15px;
+}
+
+.input-field label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background-color: #fcfcfc;
+}
+
+.input-field input:focus {
+  border-color: #ff6b00;
+  background-color: #fff;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: #ff6b00;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.btn-submit:hover {
+  background: #e66000;
+}
+
+/* Footer & Social */
+.auth-footer {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.orange-link {
+  color: #ff6b00;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-divider {
+  margin: 20px 0;
+  position: relative;
+  border-top: 1px solid #f0f0f0;
+}
+
+.auth-divider span {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 10px;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.social-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.social-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+}
+
+.social-item:hover {
+  background: #f9f9f9;
+}
+
+.icon-g { color: #db4437; }
+.icon-f { color: #4267B2; }
+.icon-git { color: #333; }

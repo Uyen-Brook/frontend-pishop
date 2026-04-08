@@ -1,5 +1,6 @@
 import HomePage from "../app/public/homePage";
 import LoginPage from "../app/auth/login/page";
+import RegisterPage from "../app/auth/register/page";
 import ProductListPage from "../components/product/ProductListPage";
 
 import CustomerProfilePage from "../app/customer/profile/page";
@@ -15,15 +16,16 @@ export interface AppRoute {
 }
 
 export const publicRoutes: AppRoute[] = [
-  { path: "/", element: <HomePage /> },
-  { path: "/auth/login", element: <LoginPage /> },
-  { path: "/products", element: <ProductListPage /> }
+  { path: ROUTES.HOME, element: <HomePage /> },
+  { path: ROUTES.LOGIN, element: <LoginPage /> },
+  { path: ROUTES.REGISTER, element: <RegisterPage /> },
+  { path: ROUTES.PRODUCT, element: <ProductListPage /> }
 ];
 
 export const userRoutes: AppRoute[] = [
-  { path: "/customer/profile", element: <CustomerProfilePage /> }
+  { path: ROUTES.CUSTOMER_PROFILE, element: <CustomerProfilePage /> }
 ];
 
 export const adminRoutes: AppRoute[] = [
-  { path: "/admin/dashboard", element: <AdminDashboardPage /> }
+  { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> }
 ];
