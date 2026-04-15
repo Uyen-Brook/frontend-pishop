@@ -1,19 +1,27 @@
+@import "tailwindcss";
 :root {
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
   --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  /* --- MAIN COLORS --- */
+  --color-blue: #1e88e5;     /* xanh nước biển (primary) */
+  --color-orange:#FF6600;   /* cam (CTA / highlight) */
+  --color-red: #e53935;      /* đỏ (error / sale) */
+  --color-black: #212121;    /* đen (text chính) */
+  --color-white:var(--bg);
+  --color-gray:#6b6375; 
+
+  /* --- EXTRA (nên có) */
+  --color-text-light: #666;
+  --color-border: #e0e0e0;
+  --color-hover: #1565c0;    
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
+  --top-header: rgb(77, 18, 27);
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -51,7 +59,7 @@
 }
 
 #root {
-  width: 1126px;
+  width: 1400px;
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
@@ -66,7 +74,7 @@ body {
   margin: 0;
 }
 
-h1,
+/* h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
@@ -108,4 +116,4 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
-}
+} */

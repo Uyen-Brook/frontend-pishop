@@ -1,0 +1,103 @@
+
+.footer-container {
+    background-color: var(--color-primary-footer);
+    padding: 40px 20px;
+    border-top: 1px solid #dee2e6;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
+}
+.footer-content {
+    width: 100%;
+    margin: 0 ;
+}
+
+.footer-title {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 15px;
+    color: var(--color-text-muted);
+}
+
+.footer-list {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-list li {
+    margin-bottom: 12px;
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+.footer-list li img{
+    width: 120px;
+}
+/* CĂN GIỮA ICON VÀ CHỮ THEO CHIỀU DỌC */
+.icon-text {
+    display: flex;
+    align-items: center; /* Căn giữa dọc */
+    gap: 10px;           /* Khoảng cách ngang giữa icon và chữ */
+}
+
+.icon {
+    color: var( --color-text-muted);
+    flex-shrink: 0;
+}
+
+.icon-text a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.icon-text a:hover {
+    color: #007bff;
+}
+
+/* KHU VỰC ICON MẠNG XÃ HỘI */
+.social-section {
+    margin-top: 20px;
+}
+
+.social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    font-size: 24px; /* Cho icon to hơn */
+}
+
+.social-icons a {
+    color: #444;
+    transition: 0.3s;
+}
+
+.fb-icon { color: #1877f2; }
+.mail-icon { color: #14801c; }
+.tiktok-icon { color: #000000; }
+
+
+@media (min-width: 600px) {
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 cột */
+    gap: 20px;
+  }
+  .footer-content {
+        max-width: 1200px;
+        margin: 0 ;
+        padding-left: 100px;
+    }
+}
+
+@media (min-width: 1024px) {
+  .footer-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+   
+  }
+}

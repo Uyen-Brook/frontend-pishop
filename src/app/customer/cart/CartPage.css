@@ -1,0 +1,21 @@
+.cart-page-container{
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+gap: 32px;
+}
+
+.cart-page-left {
+  flex: 1;
+  padding: 0px;
+  gap: 32px;
+}
+
+.cart-page-right {
+  width: auto;          /* cố định 600px */
+  flex-shrink: 0;        /* không co lại */
+  position: sticky;       /* cố định khi cuộn */
+  padding-top: 80px;
+}

@@ -1,28 +1,111 @@
 import type { Product } from "../../types/index"
-
+import { useCartStore } from "../../store/CartStore";
+import "./ProductCard.css";
 interface Props {
   product: Product;
 }
 
 export default function ProductCard({ product }: Props) {
+  const addToLocalCart = useCartStore((state) => state.addToLocalCart);
+
+  const discountedPrice = product.discountType === "PERCENT"
+    ? product.price * (1 - (product.discountValue || 0) / 100)
+    : product.discountType === "FIXED_AMOUNT"
+    ? product.price - (product.discountValue || 0)
+    : product.price;
+
+  const discountPercent = product.discountType === "PERCENT"
+    ? Math.floor(product.discountValue || 0)
+    : product.discountType === "FIXED_AMOUNT"
+    ? Math.floor((((product.price - discountedPrice) / product.price) * 100))
+    : 0;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addToLocalCart(product.id, 1);
+    alert(`Đã thêm ${product.modelName} vào giỏ hàng!`);
+  };
+
   return (
-    <div className="border rounded shadow p-4 w-64">
-      <img
-        src= {product.thumbnail}
-        alt={product.modelName}
-        className="w-full h-40 object-cover"
-      />
+    <div className="product-card">
+      {/* IMAGE SECTION */}
+      <div className="product-image">
+        <img
+          src={product.thumbnail}
+          alt={product.modelName}
+        />
 
-      <h3 className="font-semibold mt-2">{product.modelName}</h3>
-      <p className="text-gray-500">{product.brandName}</p>
+        {/* Status Badge */}
+        {product.productStatus && (
+          <span className="badge new">
+            {product.productStatus}
+          </span>
+        )}
 
-      <p className="text-lg font-bold text-red-600 mt-2">
-        {product.price.toLocaleString()}₫
-      </p>
+        {/* Discount Badge */}
+        {discountPercent > 0 && (
+          <span className="badge sale">
+            -{discountPercent}%
+          </span>
+        )}
 
-      {product.promotionName && (
-        <p className="text-sm text-green-600">{product.promotionName}</p>
-      )}
+        {/* Out of Stock */}
+        {product.quantity === 0 && (
+          <span className="out-of-stock">Hết hàng</span>
+        )}
+      </div>
+
+      {/* INFO SECTION */}
+      <div className="product-info">
+        {/* Product Name */}
+        <h3 className="product-name">
+          {product.modelName}
+        </h3>
+
+        {/* Model Number */}
+        {/* <p className="product-model">
+          {product.modelNumber}
+        </p> */}
+
+        {/* Promotion */}
+        {/* {product.promotionName && (
+          <p className="product-promo">
+            ✓ {product.promotionName}
+          </p>
+        )} */}
+
+        {/* PRICE SECTION */}
+        <div className="product-price">
+          {product.discountType ? (
+            <>
+              <span className="price-current">
+                {Math.floor(discountedPrice).toLocaleString()}₫
+              </span>
+              <span className="price-old">
+                {Math.floor(product.price).toLocaleString()}₫
+              </span>
+            </>
+          ) : (
+            <span className="price-current">
+              {product.price.toLocaleString()}₫
+            </span>
+          )}
+        </div>
+
+        {/* ADD TO CART BUTTON */}
+        <button
+          className="add-to-cart"
+          onClick={handleAddToCart}
+          disabled={product.quantity === 0}
+        >
+          {product.quantity === 0 ? "Hết hàng" : "Thêm vào giỏ"}
+        </button>
+
+        {/* VIEW DETAIL BUTTON */}
+        {/* <button className="view-detail">
+          Chi tiết
+        </button> */}
+      </div>
     </div>
   );
 }

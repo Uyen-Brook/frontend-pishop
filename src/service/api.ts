@@ -12,10 +12,10 @@ export const apiClient = axios.create({
   },
 });
 
-// ✅ Request Interceptor — lấy token từ storage (nguồn thật)
+//  Request Interceptor — lấy token từ storage (nguồn thật)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = storage.getToken(); // 👈 đổi sang storage
+    const token = storage.getToken(); //  đổi sang storage
 
     if (token) {
       // đảm bảo headers luôn tồn tại
@@ -28,7 +28,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ Response Interceptor — xử lý 401 + sync store
+// Response Interceptor — xử lý 401 + sync store
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -37,10 +37,10 @@ apiClient.interceptors.response.use(
     if (status === 401) {
       const { logout } = useAuthStore.getState();
 
-      // 👉 logout sẽ clear cả storage + store
+      //  logout sẽ clear cả storage + store
       logout();
 
-      // 👉 tránh redirect loop nếu đang ở login
+      // tránh redirect loop nếu đang ở login
       if (window.location.pathname !== ROUTES.LOGIN) {
         window.location.href = ROUTES.LOGIN;
       }

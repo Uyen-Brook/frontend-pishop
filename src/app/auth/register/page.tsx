@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/register.css";
 import {ROUTES} from "../../../config/routes";
+import { API_BASE_URL } from "../../../config/env";
 export default function RegisterPage() {
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ export default function RegisterPage() {
     }));
   };
 
-  // ===== HANDLE SUBMIT (GIẢ LẬP API) =====
+  // ===== HANDLE SUBMIT =====
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
@@ -40,7 +41,6 @@ export default function RegisterPage() {
     setSuccess("");
 
     try {
-      // 👉 giả lập request giống backend RegisterRequest
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -48,26 +48,36 @@ export default function RegisterPage() {
         password: formData.password,
       };
 
-      console.log("REGISTER PAYLOAD:", payload);
-
-      // 👉 giả lập delay API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // 👉 giả lập thành công
-      setSuccess("Đăng ký thành công!");
-
-      // 👉 reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
-      // 👉 chuyển trang login sau 1.5s
-      setTimeout(() => {
-        navigate(ROUTES.LOGIN);
-      }, 1500);
+      if (response.ok) {
+        const responseText = await response.text();
+        setSuccess(responseText || "Đăng ký thành công!");
+
+        // Reset form
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+        });
+
+        // Redirect to login after 1.5s
+        setTimeout(() => {
+          navigate(ROUTES.LOGIN);
+        }, 1500);
+      } else if (response.status === 400) {
+        const errorText = await response.text();
+        setError(errorText || "Email already exists");
+      } else {
+        setError("Đăng ký thất bại, vui lòng thử lại");
+      }
     } catch (err) {
       setError("Có lỗi xảy ra, thử lại sau");
     } finally {

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuthStore } from "../../../store/authStore";
 import { ROUTES } from "../../../config/routes";
+import { API_BASE_URL } from "../../../config/env";
 import "../../../styles/login.css";
 
 export default function LoginPage() {
@@ -26,24 +27,33 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // 👉 fake login logic (sau này thay API)
-      if (email === "uyenchu98@gmail.com" && password === "123456") {
-        const payload = {
-          accountId: 5,
-          role: "USER",
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           email: email,
-          sub: email,
-          iat: Date.now(),
-          exp: Date.now() + 1000 * 60 * 60,
-        };
+          password: password,
+        }),
+      });
 
-        const base64Payload = btoa(JSON.stringify(payload));
-        const fakeToken = `header.${base64Payload}.signature`;
-
-        login(fakeToken);
-        navigate(ROUTES.HOME);
+      if (response.ok) {
+        const data = await response.json();
+        const token = data.token || data.accessToken;
+        
+        if (token) {
+          login(token);
+          navigate(ROUTES.HOME);
+        } else {
+          setError("Không nhận được token từ server");
+        }
+      } else if (response.status === 403) {
+        setError("Tài khoản đã bị khóa");
+      } else if (response.status === 401) {
+        setError("Sai email hoặc mật khẩu");
       } else {
-        setError("Email hoặc mật khẩu không đúng");
+        setError("Đăng nhập thất bại");
       }
     } catch (err: unknown) {
       setError("Có lỗi xảy ra, thử lại sau");

@@ -4,6 +4,10 @@ export const ROUTES = {
   REGISTER: "/auth/register",
   PRODUCT:"/products",
   CART:"/cart",
+  CHECKOUT: "/checkout",
+  
+  ABOUT: "/about",
+  RETURN_POLICY: "/policy/return",
   
   CUSTOMER_PROFILE: "/customer/profile",
   CUSTOMER_ORDERS: "/customer/orders",
