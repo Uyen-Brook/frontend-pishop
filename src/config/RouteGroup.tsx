@@ -1,7 +1,8 @@
-import HomePage from "../app/public/homePage";
+import HomePage from "../app/public/home/homePage";
 import LoginPage from "../app/auth/login/page";
 import RegisterPage from "../app/auth/register/page";
 import ProductListPage from "../components/product/ProductListPage";
+import ProductDetailPage from "../app/customer/product/page";
 import AboutPage from "../app/public/about/AboutPage";
 import ReturnPolicyPage from "../app/public/policy/ReturnPolicyPage";
 
@@ -27,6 +28,7 @@ export const authRoutes: AppRoute[]=[
 export const publicRoutes: AppRoute[] = [
   { path: ROUTES.HOME, element: <HomePage /> },
   { path: ROUTES.PRODUCT, element: <ProductListPage /> },
+  { path: ROUTES.PRODUCT_DETAIL, element: <ProductDetailPage /> },
   { path: ROUTES.ABOUT, element: <AboutPage /> },
   { path: ROUTES.RETURN_POLICY, element: <ReturnPolicyPage /> }
 ];

@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CartItem } from "../../../types";
 import { ROUTES } from "../../../config/routes";
+import { useAuthStore } from "../../../store/authStore";
+import Header from "../../../components/layout/custommer/header/Header";
+import customerAddressService, { AddressResponse } from "../../../service/custommer/customerAddressService";
+import locationService, { Province, Ward, } from "../../../service/custommer/locationService";
+import CheckoutInfo from "../../../components/layout/custommer/checkout/CheckoutInfo";
+import CheckoutSummary from "../../../components/layout/custommer/checkout/checkoutSummary";
 import "./CheckoutPage.css";
+
 
 interface LocationState {
   selectedItems: CartItem[];
@@ -13,24 +20,103 @@ export default function CheckoutPage() {
   const location = useLocation();
   const state = location.state as LocationState;
   const selectedItems = state?.selectedItems || [];
+  const authUser = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
+    email: authUser?.email || "",
     phone: "",
-    address: "",
-    city: "",
-    district: "",
-    ward: "",
+    specificAddress: "",
+    provinceName: "",
+    wardName: "",
     notes: "",
+    paymentMethod: "COD",
   });
+
+  const [errors, setErrors] = useState<{
+    [key: string]: string;
+  }>({});
+
+  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+
+  // Location states
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
+
+  // Fetch saved addresses on mount
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      setIsLoadingAddresses(true);
+      const addresses = await customerAddressService.getAddresses();
+      setSavedAddresses(addresses);
+      
+      // Auto-select default address
+      const defaultAddress = addresses.find((addr) => addr.isDefault);
+      if (defaultAddress) {
+        handleSelectAddress(defaultAddress);
+      }
+      
+      setIsLoadingAddresses(false);
+    };
+
+    fetchAddresses();
+  }, []);
+
+  // Fetch provinces on mount
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      setIsLoadingProvinces(true);
+      const data = await locationService.getProvinces();
+      setProvinces(data);
+      setIsLoadingProvinces(false);
+    };
+
+    fetchProvinces();
+  }, []);
+
+  // Fetch wards when province changes
+  useEffect(() => {
+    const fetchWards = async () => {
+      if (!formData.provinceName.trim()) {
+        setWards([]);
+        return;
+      }
+
+      setIsLoadingWards(true);
+      // Find province code by name
+      const selectedProvince = provinces.find((p) => p.name === formData.provinceName);
+      if (selectedProvince) {
+        const data = await locationService.getWardsByProvinceCode(selectedProvince.code);
+        setWards(data);
+        
+        // Only reset ward if it doesn't exist in the new ward list
+        const wardExists = data.some((w) => w.name === formData.wardName);
+        if (!wardExists && formData.wardName.trim()) {
+          setFormData((prev) => ({
+            ...prev,
+            wardName: "",
+          }));
+        }
+      }
+      setIsLoadingWards(false);
+    };
+
+    fetchWards();
+  }, [formData.provinceName, provinces]);
 
   if (selectedItems.length === 0) {
     return (
-      <div className="checkout-empty">
-        <h2>Không có sản phẩm để thanh toán</h2>
-        <p>Vui lòng quay lại giỏ hàng và chọn sản phẩm</p>
-        <button onClick={() => navigate(ROUTES.CART)}>Quay lại giỏ hàng</button>
+      <div className="min-h-screen bg-white">
+        <div className="checkout-empty">
+          <h2>Không có sản phẩm để thanh toán</h2>
+          <p>Vui lòng quay lại giỏ hàng và chọn sản phẩm</p>
+          <button onClick={() => navigate(ROUTES.CART)}>Quay lại giỏ hàng</button>
+        </div>
       </div>
     );
   }
@@ -53,20 +139,99 @@ export default function CheckoutPage() {
   const totalPayable = totalPrice - totalDiscount;
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const handleSelectAddress = (address: AddressResponse) => {
+    setFormData((prev) => ({
+      ...prev,
+      fullName: address.fullName,
+      phone: address.phone,
+      specificAddress: address.specificAddress,
+      provinceName: address.provinceName,
+      wardName: address.wardName,
+    }));
+    setSelectedAddressId(Number(address.id));
+    setShowAddressForm(false);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedAddressId(null);
+    setFormData((prev) => ({
+      ...prev,
+      fullName: "",
+      phone: "",
+      specificAddress: "",
+      provinceName: "",
+      wardName: "",
+    }));
+  };
+
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Vietnamese phone format: 0961234567 or +84961234567
+    const phoneRegex = /^(0|84)\d{9,10}$|^\+84\d{9,10}$/;
+    const cleanPhone = phone.replace(/\s/g, "");
+    return phoneRegex.test(cleanPhone);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    const { fullName, email, phone, specificAddress, provinceName, wardName } = formData;
+
+    if (!fullName.trim()) {
+      newErrors.fullName = "Vui lòng nhập họ và tên";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Vui lòng nhập email";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "Email không hợp lệ";
+    }
+
+    if (!phone.trim()) {
+      newErrors.phone = "Vui lòng nhập số điện thoại";
+    } else if (!validatePhone(phone)) {
+      newErrors.phone = "Số điện thoại không hợp lệ (vd: 0961234567)";
+    }
+
+    if (!specificAddress.trim()) {
+      newErrors.specificAddress = "Vui lòng nhập chi tiết địa chỉ";
+    }
+
+    if (!provinceName.trim()) {
+      newErrors.provinceName = "Vui lòng chọn tỉnh/thành phố";
+    }
+
+    if (!wardName.trim()) {
+      newErrors.wardName = "Vui lòng chọn xã/phường";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handlePlaceOrder = () => {
-    const { fullName, email, phone, address, city, district, ward } = formData;
-    
-    if (!fullName || !email || !phone || !address || !city || !district || !ward) {
-      alert("Vui lòng điền đầy đủ thông tin giao hàng");
+    if (!validateForm()) {
       return;
     }
 
@@ -82,107 +247,27 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="checkout-container">
-      <div className="checkout-left">
-        <h2>Thông tin giao hàng</h2>
-        <form className="checkout-form">
-          <div className="form-group">
-            <label htmlFor="fullName">Họ và tên</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              placeholder="Nhập họ và tên"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="Nhập email"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="phone">Số điện thoại</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder="Nhập số điện thoại"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="address">Địa chỉ</label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="Nhập địa chỉ"
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="city">Tỉnh/Thành phố</label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="Tỉnh/Thành phố"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="district">Quận/Huyện</label>
-              <input
-                type="text"
-                id="district"
-                name="district"
-                value={formData.district}
-                onChange={handleInputChange}
-                placeholder="Quận/Huyện"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="ward">Phường/Xã</label>
-              <input
-                type="text"
-                id="ward"
-                name="ward"
-                value={formData.ward}
-                onChange={handleInputChange}
-                placeholder="Phường/Xã"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="notes">Ghi chú (tùy chọn)</label>
-            <textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              placeholder="Ghi chú thêm cho đơn hàng"
-              rows={4}
-            />
-          </div>
-        </form>
-      </div>
+    <div className="min-h-screen bg-white">
+      <div className="checkout-container">
+      <CheckoutInfo
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        savedAddresses={savedAddresses}
+        selectedAddressId={selectedAddressId}
+        setSelectedAddressId={setSelectedAddressId}
+        isLoadingAddresses={isLoadingAddresses}
+        showAddressForm={showAddressForm}
+        setShowAddressForm={setShowAddressForm}
+        provinces={provinces}
+        wards={wards}
+        isLoadingProvinces={isLoadingProvinces}
+        isLoadingWards={isLoadingWards}
+        handleInputChange={handleInputChange}
+        handleSelectAddress={handleSelectAddress}
+        handleClearSelection={handleClearSelection}
+      />
 
       <div className="checkout-right">
         <h2>Đơn hàng của bạn</h2>
@@ -204,36 +289,15 @@ export default function CheckoutPage() {
           ))}
         </div>
 
-        <div className="checkout-summary">
-          <div className="summary-row">
-            <span>Tạm tính:</span>
-            <span>{totalPrice.toLocaleString("vi-VN")}đ</span>
-          </div>
-          <div className="summary-row">
-            <span>Giảm giá:</span>
-            <span>-{totalDiscount.toLocaleString("vi-VN")}đ</span>
-          </div>
-          <div className="summary-divider"></div>
-          <div className="summary-row final">
-            <span>Thành tiền:</span>
-            <span>{totalPayable.toLocaleString("vi-VN")}đ</span>
-          </div>
-
-          <button
-            className="btn-place-order"
-            onClick={handlePlaceOrder}
-          >
-            ĐẶT HÀNG
-          </button>
-
-          <button
-            className="btn-back-cart"
-            onClick={() => navigate(ROUTES.CART)}
-          >
-            Quay lại giỏ hàng
-          </button>
-        </div>
+        <CheckoutSummary
+          totalPrice={totalPrice}
+          totalDiscount={totalDiscount}
+          totalPayable={totalPayable}
+          onPlaceOrder={handlePlaceOrder}
+          onBackToCart={() => navigate(ROUTES.CART)}
+        />
       </div>
+    </div>
     </div>
   );
 }

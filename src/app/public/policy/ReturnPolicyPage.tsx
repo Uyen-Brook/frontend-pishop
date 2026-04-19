@@ -3,7 +3,7 @@ import "./ReturnPolicyPage.css";
 
 export default function ReturnPolicyPage() {
   return (
-    <div className="policy-page">
+    <div className="margin-auto">
       {/* Hero Section */}
       <section className="policy-hero">
         <div className="policy-hero-content">

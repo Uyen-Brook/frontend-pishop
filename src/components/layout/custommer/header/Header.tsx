@@ -1,8 +1,8 @@
 import { Link, Navigate } from "react-router-dom";
-import { useAuthStore } from "../../../store/authStore";
-import { ROUTES } from "../../../config/routes";
-import "./css/header.css";
-import logo from "../../../assets/pishopLogo.svg";
+import { useAuthStore } from "../../../../store/authStore";
+import { ROUTES } from "../../../../config/routes";
+import "./header.css";
+import logo from "../../../../assets/pishopLogo.svg";
 import {
   FaEnvelope,
   FaPhoneAlt,
@@ -17,7 +17,7 @@ export default function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   return (
-    <header className="header">
+    <header className="max-w-7xl mx-auto">
 
       {/* TOP BAR */}
       <div className="top-bar">

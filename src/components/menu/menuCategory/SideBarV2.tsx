@@ -1,6 +1,6 @@
 // src/components/sidebar/Sidebar.tsx
 import React from "react";
-import type { Category } from "../../types/index";
+import type { Category } from "../../../types/index";
 import SidebarItem from "./SideBarItemV2";
 import "./SideBarV2.css"
 

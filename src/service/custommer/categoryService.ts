@@ -1,5 +1,6 @@
 // MOCK DATA
 import { Category } from "../../types";
+import {apiClient } from "../api";
 export const mockCategories: Category[] = [
   {
     id: 1,
@@ -74,17 +75,13 @@ export const mockCategories: Category[] = [
 ];
 
 export const categoryService = {
-  async getAll() {
-    return Promise.resolve(mockCategories);
+ async getAll(): Promise<Category[]> {
+    try {
+      const response = await apiClient.get<Category[]>("/categories");
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return mockCategories;
+    }
   }
 };
-
-
-// import  apiClient from "../api";
-// import type { Category } from "../../types/index";
-
-// export const categoryService = {
-//   getAll(): Promise<Category[]> {
-//     return apiClient.get("/categories").then((res) => res.data);
-//   },
-// };

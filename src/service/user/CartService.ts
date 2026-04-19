@@ -2,6 +2,8 @@ import type { Cart, CartItem } from "../../types/index";
 import { useAuthStore } from "../../store/authStore";
 import { storage } from "../../utils/storage";
 
+
+export const mockCart0: Cart = {cartId: 1, items: [], totalPrice: 0};
 export const mockCart: Cart = {
   cartId: 1,
   items: [
@@ -74,7 +76,7 @@ export const CartService = {
         if (authStore.isAuthenticated && authStore.isTokenValid()) {
           // User đã login và token còn hạn - lấy từ API
           // TODO: Thay bằng API call khi backend ready
-          resolve(mockCart);
+          resolve(mockCart0);
         } else {
           // Chưa login - lấy từ local cart
           const localCartItems = storage.getLocalCart();

@@ -1,8 +1,8 @@
 // src/components/sidebar/SidebarItem.tsx
 import React from "react";
-import type { Category } from "../../types/index";
+import type { Category } from "../../../types/index";
 import "./SideBarV2.css";
-import { iconMap } from "../shared/iconMap";
+import { iconMap } from "../../shared/iconMap";
 
 
 
@@ -27,3 +27,4 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ category, active, onSelect })
 };
 
 export default SidebarItem;
+

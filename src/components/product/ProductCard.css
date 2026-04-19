@@ -75,6 +75,7 @@
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -140,6 +141,7 @@
 }
 
 .view-detail {
+  display: block;
   width: 100%;
   padding: 10px;
   background: #f0f0f0;
@@ -148,10 +150,13 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
+  text-decoration: none;
+  text-align: center;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .view-detail:hover {
   background: #e0e0e0;
+  color: #1a1a1a;
 }

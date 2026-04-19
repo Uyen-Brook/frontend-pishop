@@ -61,6 +61,33 @@ export interface Product {
   supplierName: string;
   thumbnail: string;
 }
+export interface ProductDetail {
+  id: number;
+  modelName: string;
+  modelNumber: string;
+  thumbnail: string;
+
+  price: number; // BigDecimal -> number
+  productStatus: string; // hoặc enum nếu bạn định nghĩa riêng
+  createAt: string; // LocalDateTime -> ISO string
+  updateAt: string;
+  quantity: number;
+
+  description: string;
+  specification: Record<string, string | Record<string, string>>; // Support both flat strings and nested objects
+  listImage: string[];                   // List<String>
+
+  discountPercent: number;
+  discountValue: number;
+  discountType: string; // hoặc enum
+  promotionDescription: string;
+  promotionName: string;
+
+  brandName: string;
+  supplierName: string;
+  categoryName: string;
+}
+
 // giỏ hàng
 export interface CartItem {
   basePrice: number;

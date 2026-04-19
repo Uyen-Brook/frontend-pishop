@@ -12,8 +12,8 @@ import {
     FaRegNewspaper,
 } from "react-icons/fa";
 import { AiFillTikTok } from "react-icons/ai";
-import { ROUTES } from "../../../config/routes";
-import "./css/Footer.css";
+import { ROUTES } from "../../../../config/routes";
+import "./Footer.css";
 
 export default function Footer() {
     return (
