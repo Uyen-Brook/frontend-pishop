@@ -6,7 +6,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <Header />
-      <main className="main-content pt-16"  >{children}</main>
+      <main className="main-content" >{children}</main>
       <Footer />
     </>
   );

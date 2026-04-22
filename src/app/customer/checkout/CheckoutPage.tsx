@@ -3,11 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CartItem } from "../../../types";
 import { ROUTES } from "../../../config/routes";
 import { useAuthStore } from "../../../store/authStore";
-import Header from "../../../components/layout/custommer/header/Header";
 import customerAddressService, { AddressResponse } from "../../../service/custommer/customerAddressService";
-import locationService, { Province, Ward, } from "../../../service/custommer/locationService";
-import CheckoutInfo from "../../../components/layout/custommer/checkout/CheckoutInfo";
-import CheckoutSummary from "../../../components/layout/custommer/checkout/checkoutSummary";
+import locationService, { Province, Ward } from "../../../service/custommer/locationService";
+import AddressSection from "../../../components/layout/custommer/checkout/AddressSection";
+import PaymentMethodSection from "../../../components/layout/custommer/checkout/PaymentMethodSection";
+import OrderSummary from "../../../components/layout/custommer/checkout/OrderSummary";
 import "./CheckoutPage.css";
 
 
@@ -54,13 +54,13 @@ export default function CheckoutPage() {
       setIsLoadingAddresses(true);
       const addresses = await customerAddressService.getAddresses();
       setSavedAddresses(addresses);
-      
+
       // Auto-select default address
       const defaultAddress = addresses.find((addr) => addr.isDefault);
       if (defaultAddress) {
         handleSelectAddress(defaultAddress);
       }
-      
+
       setIsLoadingAddresses(false);
     };
 
@@ -93,7 +93,7 @@ export default function CheckoutPage() {
       if (selectedProvince) {
         const data = await locationService.getWardsByProvinceCode(selectedProvince.code);
         setWards(data);
-        
+
         // Only reset ward if it doesn't exist in the new ward list
         const wardExists = data.some((w) => w.name === formData.wardName);
         if (!wardExists && formData.wardName.trim()) {
@@ -249,47 +249,30 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="checkout-container">
-      <CheckoutInfo
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        savedAddresses={savedAddresses}
-        selectedAddressId={selectedAddressId}
-        setSelectedAddressId={setSelectedAddressId}
-        isLoadingAddresses={isLoadingAddresses}
-        showAddressForm={showAddressForm}
-        setShowAddressForm={setShowAddressForm}
-        provinces={provinces}
-        wards={wards}
-        isLoadingProvinces={isLoadingProvinces}
-        isLoadingWards={isLoadingWards}
-        handleInputChange={handleInputChange}
-        handleSelectAddress={handleSelectAddress}
-        handleClearSelection={handleClearSelection}
-      />
+        <div className="checkout-left">
+          <AddressSection
+            formData={formData}
+            errors={errors}
+            savedAddresses={savedAddresses}
+            selectedAddressId={selectedAddressId}
+            isLoadingAddresses={isLoadingAddresses}
+            provinces={provinces}
+            wards={wards}
+            isLoadingProvinces={isLoadingProvinces}
+            isLoadingWards={isLoadingWards}
+            onSelectAddress={handleSelectAddress}
+            onInputChange={handleInputChange}
+          />
 
-      <div className="checkout-right">
-        <h2>Đơn hàng của bạn</h2>
-        <div className="checkout-items">
-          {selectedItems.map((item) => (
-            <div key={item.productId} className="checkout-item">
-              <img src={item.thumbnail} alt={item.productName} />
-              <div className="item-info">
-                <h4>{item.productName}</h4>
-                <p className="model-number">{item.modelNumber}</p>
-                <p className="item-price">
-                  {item.finalPrice.toLocaleString("vi-VN")}đ x {item.quantity}
-                </p>
-              </div>
-              <div className="item-subtotal">
-                {(item.finalPrice * item.quantity).toLocaleString("vi-VN")}đ
-              </div>
-            </div>
-          ))}
+          <PaymentMethodSection
+            paymentMethod={formData.paymentMethod}
+            onPaymentMethodChange={handleInputChange}
+          />
         </div>
 
-        <CheckoutSummary
+
+        <OrderSummary
+          selectedItems={selectedItems}
           totalPrice={totalPrice}
           totalDiscount={totalDiscount}
           totalPayable={totalPayable}
@@ -297,7 +280,7 @@ export default function CheckoutPage() {
           onBackToCart={() => navigate(ROUTES.CART)}
         />
       </div>
-    </div>
+
     </div>
   );
 }

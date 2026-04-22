@@ -4,24 +4,28 @@ import { useNavigate } from "react-router-dom";
 import { Cart, CartItem } from "../../../types";
 import { CartService } from "../../../service/user/CartService";
 import { ROUTES } from "../../../config/routes";
-import Header from "../../../components/layout/custommer/header/Header";
 import CartItemComponent from "../../../components/cart/CartItem";
 import CartEmpty from "../../../components/cart/CartEmpty";
 import CartSummary from "../../../components/cart/CartSummary";
 import "./CartPage.css";
+import { useAuthStore } from "../../../store/authStore";
 
 export default function CartPage() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<Cart | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // giả sử accountId = 1
-    CartService.getCartByAccountId(1).then((data) => {
-      setCart(data);
-      setIsInitialized(true);
-    });
-  }, []);
+  // lấy id user
+  const user = useAuthStore((state) => state.user);
+  
+   useEffect(() => {
+    if (user?.accountId) {
+      // giả sử trong DecodedToken có field id hoặc accountId
+      CartService.getCartByAccountId(user.accountId).then((data) => {
+        setCart(data);
+        setIsInitialized(true);
+      });
+    }
+  }, [user]);
 
   const handleToggle = (id: number) => {
     if (!cart) return;

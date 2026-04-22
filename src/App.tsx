@@ -5,6 +5,7 @@ import { publicRoutes, userRoutes, adminRoutes, authRoutes } from "./config/Rout
 import { RoleRoute } from "./components/layout/RoleRule";
 import UserLayout from "./layout/UserLayout";
 import { useAuthStore } from "./store/authStore";
+import AdminLayout from "./layout/AdminLayout";
 
 export default function App() {
   // Initialize auth from localStorage on app mount
@@ -20,6 +21,19 @@ export default function App() {
         <Route key={r.path} path={r.path} element={r.element} />
       ))}
 
+      {/* ADMIN ROUTES */}
+      {adminRoutes.map((r) => (
+        <Route
+          key={r.path}
+          path={r.path}
+          element={
+            <RoleRoute allowRoles={["ADMIN"]}>
+              <AdminLayout>{r.element}</AdminLayout>
+            </RoleRoute>
+          }
+        />
+      ))}
+
       {/* PUBLIC ROUTES */}
        {publicRoutes.map((r) => (
         <Route
@@ -30,7 +44,6 @@ export default function App() {
       ))}
 
       {/* USER ROUTES */}
-
       {userRoutes.map((r) => (
         <Route
           key={r.path}
@@ -39,17 +52,6 @@ export default function App() {
             <RoleRoute allowRoles={["USER"]}>
               <UserLayout>{r.element}</UserLayout>
             </RoleRoute>
-          }
-        />
-      ))}
-
-      {/* ADMIN ROUTES */}
-      {adminRoutes.map((r) => (
-        <Route
-          key={r.path}
-          path={r.path}
-          element={
-            <RoleRoute allowRoles={["ADMIN"]}>{r.element}</RoleRoute>
           }
         />
       ))}

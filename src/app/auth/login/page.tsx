@@ -43,8 +43,12 @@ export default function LoginPage() {
         const token = data.token || data.accessToken;
         
         if (token) {
-          login(token);
-          navigate(ROUTES.HOME);
+          const decodedUser = login(token);
+          if (decodedUser?.role === "ADMIN") {
+            navigate(ROUTES.ADMIN_DASHBOARD);
+          } else {
+            navigate(ROUTES.HOME);
+          }
         } else {
           setError("Không nhận được token từ server");
         }

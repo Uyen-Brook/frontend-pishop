@@ -8,7 +8,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
-  login: (token: string) => void;
+  login: (token: string) => DecodedToken | null;
   logout: () => void;
   initFromStorage: () => void;
   isTokenValid: () => boolean;
@@ -100,8 +100,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isInitialized: true,
       });
+      return decoded;
     } catch {
       set({ isInitialized: true });
+      return null;
     }
   },
 

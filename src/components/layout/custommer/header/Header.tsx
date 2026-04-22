@@ -51,10 +51,17 @@ export default function Header() {
         <div className="login-part">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <FaUserCircle size={20} className="icon-blue"/>
+              <Link
+              to={ROUTES.CUSTOMER_PROFILE}
+              className="px-3 py-1  text-white rounded flex items-center gap-1"
+            >
+              <FaUserCircle size={18} />
+              TÀI KHOẢN
+            </Link>
+              {/* <FaUserCircle size={20} className="icon-blue"/>
               <span className="font-medium">
                 {user?.email}
-              </span>
+              </span> */}
 
               <button
                 onClick={logout}
@@ -66,7 +73,7 @@ export default function Header() {
           ) : (
             <Link
               to={ROUTES.LOGIN}
-              className="px-3 py-1 bg-blue-600 text-white rounded flex items-center gap-1"
+              className="px-3 py-1 text-white rounded flex items-center gap-1"
             >
               <FaUserCircle size={18} />
               Đăng nhập

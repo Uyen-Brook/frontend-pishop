@@ -1,5 +1,6 @@
 
 import type { Product, ProductDetail } from "../../types/index";
+import apiClient from "../api";
 
 export const mockProducts: Product[] = [
   {
@@ -154,7 +155,7 @@ export const mockProducts: Product[] = [
   }
 ];
 export const thinkpadX1CarbonGen13: ProductDetail = {
-  id: 10001,
+  id:2,
   modelName: "ThinkPad X1 Carbon Gen 13",
   modelNumber: "21NS0010GE",
   thumbnail: "https://www.lenovo.com/x1-carbon-gen13-thumbnail.jpg",
@@ -200,7 +201,7 @@ export const thinkpadX1CarbonGen13: ProductDetail = {
   categoryName: "Laptop"
 };
 export const thinkpadX1CarbonGen131: ProductDetail = {
-  id: 10002,
+  id: 2,
   modelName: "ThinkPad X1 Carbon Gen 13",
   modelNumber: "21NS0010GE",
   thumbnail: "https://www.lenovo.com/x1-carbon-gen13-thumbnail.jpg",
@@ -284,29 +285,46 @@ export const thinkpadX1CarbonGen131: ProductDetail = {
 };
 
 export const productService = {
-  async getByCategory(categoryName: string): Promise<Product[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockProducts.filter((p) => p.categoryName === categoryName));
-      }, 300);
-    });
+  // call
+  async getByCategory(categoryId: number): Promise<Product[]> {
+    try{
+       const response = await apiClient.get<Product[]>(`/product/category/${categoryId}`);
+        return response.data;
+    }catch(error){
+      console.error("không có sản phẩm nào phù hợp với danh mục ", error);
+      return [];
+    }
+   
   },
-  async getAll():Promise<Product[]>{
-    return new Promise((resolve)=>{
-      setTimeout(()=>{
-        resolve(mockProducts)
-      },300);
-    });
+  // call 2
+  async getAll(): Promise<Product[]> {
+    try{
+       const response = await apiClient.get<Product[]>("/products");
+        return response.data;
+    }catch(error){
+      console.error("Error fetching products:", error);
+      return [];
+    }
+  },
+  // call 3
+  async getById(id: number): Promise<ProductDetail | null> {
+    try{
+        const response = await apiClient.get<ProductDetail>(`/product/${id}`);
+        return response.data;
+    } catch(error){
+      console.error("Error fetching product detail:", error);
+      return null;
+    }
   },
 
-  async getById(id: number): Promise<Product | null> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const product = mockProducts.find((p) => p.id === id);
-        resolve(product || null);
-      }, 300);
-    });
-  },
+  // async getById(id: number): Promise<Product | null> {
+  //   return new Promise((resolve) => {
+  //     setTimeout(() => {
+  //       const product = mockProducts.find((p) => p.id === id);
+  //       resolve(product || null);
+  //     }, 300);
+  //   });
+  // },
 
   async getByCategoryId(categoryId: number): Promise<Product[]> {
     return new Promise((resolve) => {
@@ -342,60 +360,14 @@ export const productService = {
     });
   },
 
-  async getByBothFilters(categoryId?: number, brandId?: number): Promise<Product[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let filtered = mockProducts;
-
-        if (brandId) {
-          const brandMap: Record<number, string> = {
-            1: "Apple",
-            2: "Dell",
-            3: "Samsung",
-            4: "Sony",
-            5: "ASUS",
-            6: "Logitech",
-            7: "TP-Link"
-          };
-          const brandName = brandMap[brandId];
-          filtered = filtered.filter((p) => p.brandName === brandName);
-        }
-
-        resolve(filtered);
-      }, 300);
-    });
-  }
+  async getByCategoryAndBrand(categoryId: number, brandId: number): Promise<Product[]> {
+    try{
+       const response = await apiClient.get<Product[]>(`/products?categoryId=${categoryId}&brandId=${brandId}`);
+        return response.data;
+    }catch(error){
+      console.error("không có sản phẩm nào phù hợp với danh mục và thương hiệu ", error);
+      return [];
+    }
+   
+  },
 };
-
-// API implementation (uncomment when backend is ready)
-// import apiClient from "../api";
-// import type { Product } from "../../types/index";
-
-// export const productService = {
-//   getByCategory(categoryName: string): Promise<Product[]> {
-//     return apiClient
-//       .get(`/api/products?categoryName=${categoryName}`)
-//       .then((res) => res.data);
-//   },
-
-//   getByCategoryId(categoryId: number): Promise<Product[]> {
-//     return apiClient
-//       .get(`/api/products?categoryId=${categoryId}`)
-//       .then((res) => res.data);
-//   },
-
-//   getByBrandId(brandId: number): Promise<Product[]> {
-//     return apiClient
-//       .get(`/api/products?brandId=${brandId}`)
-//       .then((res) => res.data);
-//   },
-
-//   getByBothFilters(categoryId?: number, brandId?: number): Promise<Product[]> {
-//     const params = new URLSearchParams();
-//     if (categoryId) params.append("categoryId", categoryId.toString());
-//     if (brandId) params.append("brandId", brandId.toString());
-//     return apiClient
-//       .get(`/api/products?${params.toString()}`)
-//       .then((res) => res.data);
-//   }
-// };

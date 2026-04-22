@@ -4,11 +4,14 @@ import Header from "../../../components/layout/custommer/header/Header";
 import { productService } from "../../../service/custommer/productService";
 import { useCartStore } from "../../../store/CartStore";
 import type { ProductDetail } from "../../../types/index";
+import ProductDetailComponent from "../../../components/product/ProductDetailComponent";
 import "./ProductDetail.css";
 import { FaArrowLeft, FaShoppingCart, FaHeart, FaStar } from "react-icons/fa";
 
 export default function ProductDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
+  if (!id) return <div>Not found</div>;
+  const productId = Number(id);
   const navigate = useNavigate();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -39,7 +42,7 @@ export default function ProductDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
+      
         <div className="flex justify-center items-center h-96">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -80,6 +83,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <ProductDetailComponent id={productId} />
       <div style={{ paddingTop: "80px" }}>
         <div className="max-w-1400 mx-auto px-6 py-6">
           {/* BREADCRUMB */}

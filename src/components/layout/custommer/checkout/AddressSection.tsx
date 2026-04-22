@@ -2,7 +2,7 @@ import React from "react";
 import { AddressResponse } from "../../../../service/custommer/customerAddressService";
 import { Province, Ward } from "../../../../service/custommer/locationService";
 
-interface CheckoutInfoProps {
+interface AddressSectionProps {
   formData: {
     fullName: string;
     email: string;
@@ -11,50 +11,37 @@ interface CheckoutInfoProps {
     provinceName: string;
     wardName: string;
     notes: string;
-    paymentMethod: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<typeof formData>>;
   errors: { [key: string]: string };
-  setErrors: React.Dispatch<React.SetStateAction<typeof errors>>;
   savedAddresses: AddressResponse[];
   selectedAddressId: number | null;
-  setSelectedAddressId: React.Dispatch<React.SetStateAction<number | null>>;
   isLoadingAddresses: boolean;
-  showAddressForm: boolean;
-  setShowAddressForm: React.Dispatch<React.SetStateAction<boolean>>;
   provinces: Province[];
   wards: Ward[];
   isLoadingProvinces: boolean;
   isLoadingWards: boolean;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleSelectAddress: (address: AddressResponse) => void;
-  handleClearSelection: () => void;
+  onSelectAddress: (address: AddressResponse) => void;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 }
 
-export default function CheckoutInfo({
+export default function AddressSection({
   formData,
-  setFormData,
   errors,
-  setErrors,
   savedAddresses,
   selectedAddressId,
-  setSelectedAddressId,
   isLoadingAddresses,
-  showAddressForm,
-  setShowAddressForm,
   provinces,
   wards,
   isLoadingProvinces,
   isLoadingWards,
-  handleInputChange,
-  handleSelectAddress,
-  handleClearSelection,
-}: CheckoutInfoProps) {
+  onSelectAddress,
+  onInputChange,
+}: AddressSectionProps) {
   return (
     <div className="checkout-left">
       <h2>Thông tin giao hàng</h2>
 
-      {/* ADDRESS SELECTION DROPDOWN */}
+      {/* SAVED ADDRESSES DROPDOWN */}
       {!isLoadingAddresses && savedAddresses.length > 0 && (
         <div>
           <label htmlFor="addressDropdown">Danh sách địa chỉ đã lưu:</label>
@@ -69,7 +56,7 @@ export default function CheckoutInfo({
                   (a) => Number(a.id) === addressId
                 );
                 if (selectedAddr) {
-                  handleSelectAddress(selectedAddr);
+                  onSelectAddress(selectedAddr);
                 }
               }
             }}
@@ -84,7 +71,7 @@ export default function CheckoutInfo({
         </div>
       )}
 
-      {/* ADDRESS FORM SECTION */}
+      {/* ADDRESS FORM */}
       <form className="checkout-form">
         <div className="form-group">
           <label htmlFor="fullName">Tên người nhận</label>
@@ -93,7 +80,7 @@ export default function CheckoutInfo({
             id="fullName"
             name="fullName"
             value={formData.fullName}
-            onChange={handleInputChange}
+            onChange={onInputChange}
             placeholder="Nhập họ và tên"
             className={errors.fullName ? "input-error" : ""}
           />
@@ -101,13 +88,15 @@ export default function CheckoutInfo({
         </div>
 
         <div className="form-group">
-          <label htmlFor="email">Email <span className="label-hint">(từ tài khoản)</span></label>
+          <label htmlFor="email">
+            Email <span className="label-hint">(từ tài khoản)</span>
+          </label>
           <input
             type="email"
             id="email"
             name="email"
             value={formData.email}
-            onChange={handleInputChange}
+            onChange={onInputChange}
             placeholder="Nhập email"
             className={errors.email ? "input-error" : ""}
           />
@@ -121,7 +110,7 @@ export default function CheckoutInfo({
             id="phone"
             name="phone"
             value={formData.phone}
-            onChange={handleInputChange}
+            onChange={onInputChange}
             placeholder="Nhập số điện thoại"
             className={errors.phone ? "input-error" : ""}
           />
@@ -135,11 +124,13 @@ export default function CheckoutInfo({
             id="specificAddress"
             name="specificAddress"
             value={formData.specificAddress}
-            onChange={handleInputChange}
+            onChange={onInputChange}
             placeholder="Nhập chi tiết địa chỉ (số nhà, đường, ...)"
             className={errors.specificAddress ? "input-error" : ""}
           />
-          {errors.specificAddress && <span className="error-message">{errors.specificAddress}</span>}
+          {errors.specificAddress && (
+            <span className="error-message">{errors.specificAddress}</span>
+          )}
         </div>
 
         <div className="form-row">
@@ -149,7 +140,7 @@ export default function CheckoutInfo({
               id="provinceName"
               name="provinceName"
               value={formData.provinceName}
-              onChange={handleInputChange}
+              onChange={onInputChange}
               disabled={isLoadingProvinces}
               className={errors.provinceName ? "input-error" : ""}
             >
@@ -160,7 +151,9 @@ export default function CheckoutInfo({
                 </option>
               ))}
             </select>
-            {errors.provinceName && <span className="error-message">{errors.provinceName}</span>}
+            {errors.provinceName && (
+              <span className="error-message">{errors.provinceName}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -169,7 +162,7 @@ export default function CheckoutInfo({
               id="wardName"
               name="wardName"
               value={formData.wardName}
-              onChange={handleInputChange}
+              onChange={onInputChange}
               disabled={!formData.provinceName || isLoadingWards || wards.length === 0}
               className={errors.wardName ? "input-error" : ""}
             >
@@ -180,8 +173,12 @@ export default function CheckoutInfo({
                 </option>
               ))}
             </select>
-            {errors.wardName && <span className="error-message">{errors.wardName}</span>}
-            {!formData.provinceName && <span className="hint-text">Chọn tỉnh/thành phố trước</span>}
+            {errors.wardName && (
+              <span className="error-message">{errors.wardName}</span>
+            )}
+            {!formData.provinceName && (
+              <span className="hint-text">Chọn tỉnh/thành phố trước</span>
+            )}
           </div>
         </div>
 
@@ -191,52 +188,12 @@ export default function CheckoutInfo({
             id="notes"
             name="notes"
             value={formData.notes}
-            onChange={handleInputChange}
+            onChange={onInputChange}
             placeholder="Ghi chú thêm cho đơn hàng"
             rows={4}
           />
         </div>
       </form>
-
-      {/* PAYMENT METHOD SECTION */}
-      <div className="payment-method-section">
-        <h3>Phương thức thanh toán</h3>
-        <div className="payment-options">
-          <label className="payment-option">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="COD"
-              checked={formData.paymentMethod === "COD"}
-              onChange={handleInputChange}
-            />
-            <div className="payment-content">
-              <span className="payment-icon">🚚</span>
-              <div className="payment-text">
-                <p className="payment-title">Thanh toán khi nhận hàng (COD)</p>
-                <p className="payment-desc">Trả tiền trực tiếp cho nhân viên giao hàng</p>
-              </div>
-            </div>
-          </label>
-
-          <label className="payment-option">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="BANK"
-              checked={formData.paymentMethod === "BANK"}
-              onChange={handleInputChange}
-            />
-            <div className="payment-content">
-              <span className="payment-icon">🏦</span>
-              <div className="payment-text">
-                <p className="payment-title">Chuyển khoản ngân hàng</p>
-                <p className="payment-desc">Chuyển tiền vào tài khoản ngân hàng của shop</p>
-              </div>
-            </div>
-          </label>
-        </div>
-      </div>
     </div>
   );
 }
