@@ -1,32 +1,43 @@
-import React, { useState } from "react";
+import React from "react";
 import Calendar from "react-calendar";
 import Card from "../card/Card";
+
 import "react-calendar/dist/Calendar.css";
-import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 
-type Value = Date | Date[] | [Date | null, Date | null] | null;
+import {
+  MdChevronLeft,
+  MdChevronRight,
+} from "react-icons/md";
 
-const MiniCalendar = () => {
-  const [value, setValue] = useState(new Date());
+type Value = Date | null;
 
-  const handleChange = (val: Value, event: React.MouseEvent<HTMLButtonElement>) => {
-    if (val instanceof Date) {
-      setValue(val);
-    }
-  };
+interface MiniCalendarProps {
+  value: Value;
+  onChange: (date: Date) => void;
+}
 
+const MiniCalendar: React.FC<MiniCalendarProps> = ({
+  value,
+  onChange,
+}) => {
   return (
-    <div>
-      <Card extra="flex w-full h-full flex-col px-3 py-3">
-        <Calendar
-          onChange={handleChange}
-          value={value}
-          prevLabel={<MdChevronLeft className="ml-1 h-6 w-6 " />}
-          nextLabel={<MdChevronRight className="ml-1 h-6 w-6 " />}
-          view={"month"}
-        />
-      </Card>
-    </div>
+    <Card extra="flex h-full w-full flex-col px-3 py-3">
+      <Calendar className="rounded-xl  bg-white p-3 shadow-sm "
+        onChange={(val) => {
+          if (val instanceof Date) {
+            onChange(val);
+          }
+        }}
+        value={value}
+        prevLabel={
+          <MdChevronLeft className="ml-1 h-6 w-6" />
+        }
+        nextLabel={
+          <MdChevronRight className="ml-1 h-6 w-6" />
+        }
+        view="month"
+      />
+    </Card>
   );
 };
 

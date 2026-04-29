@@ -2,12 +2,20 @@ import { apiClient } from "../api";
 
 export interface Province {
   code: string;
+  codeName:string;
+  fullName: string;
+  fullNameEn: string;
   name: string;
+  nameEn: string;
 }
 
 export interface Ward {
   code: string;
   name: string;
+  codeName:string;
+  fullName: string;
+  fullNameEn: string;
+  nameEn: string;
   provinceCode: string;
 }
 
@@ -17,7 +25,7 @@ class LocationService {
    */
   async getProvinces(): Promise<Province[]> {
     try {
-      const response = await apiClient.get<Province[]>("/locations/provinces");
+      const response = await apiClient.get<Province[]>("/location/provinces");
       return response.data || [];
     } catch (error) {
       console.error("Error fetching provinces:", error);
@@ -30,7 +38,7 @@ class LocationService {
    */
   async getWardsByProvinceCode(provinceCode: string): Promise<Ward[]> {
     try {
-      const response = await apiClient.get<Ward[]>(`/locations/wards/${provinceCode}`);
+      const response = await apiClient.get<Ward[]>(`/location/wards/provinces/${provinceCode}`);
       return response.data || [];
     } catch (error) {
       console.error("Error fetching wards:", error);

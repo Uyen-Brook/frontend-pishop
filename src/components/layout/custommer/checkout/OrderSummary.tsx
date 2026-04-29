@@ -8,6 +8,7 @@ interface OrderSummaryProps {
   totalPayable: number;
   onPlaceOrder: () => void;
   onBackToCart: () => void;
+  isSubmitting?: boolean;
 }
 
 export default function OrderSummary({
@@ -17,6 +18,7 @@ export default function OrderSummary({
   totalPayable,
   onPlaceOrder,
   onBackToCart,
+  isSubmitting = false,
 }: OrderSummaryProps) {
   return (
     <div className="checkout-right">
@@ -54,11 +56,19 @@ export default function OrderSummary({
           <span>{totalPayable.toLocaleString("vi-VN")}đ</span>
         </div>
 
-        <button className="btn-place-order" onClick={onPlaceOrder}>
-          ĐẶT HÀNG
+        <button 
+          className="btn-place-order" 
+          onClick={onPlaceOrder}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "ĐANG XỬ LÝ..." : "ĐẶT HÀNG"}
         </button>
 
-        <button className="btn-back-cart" onClick={onBackToCart}>
+        <button 
+          className="btn-back-cart" 
+          onClick={onBackToCart}
+          disabled={isSubmitting}
+        >
           Quay lại giỏ hàng
         </button>
       </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CartItem } from "../../types";
 import "./css/CartItem.css";
 
+
 interface Props {
   item: CartItem;
   onToggle: (id: number) => void;
@@ -12,12 +13,13 @@ interface Props {
 export default function CartItemComponent({ item, onToggle, onUpdateQty, onDelete }: Props) {
   const [qtyError, setQtyError] = useState<Record<number, string>>({});
   const [quantity, setQuantity] = useState(item.quantity);
-
+  // xử lý logic liên quan đến cart store
+  
   // Sync quantity with parent item when item.quantity changes
   useEffect(() => {
     setQuantity(item.quantity);
   }, [item.quantity]);
-
+ 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = Number(e.target.value);
 

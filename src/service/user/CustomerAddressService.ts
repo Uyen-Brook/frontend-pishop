@@ -1,5 +1,5 @@
 import { apiClient } from "../api";
-
+import { useAuthStore } from "../../store/authStore";
 export interface AddressResponse {
   id: BigInt;
   fullName: string;
@@ -10,58 +10,51 @@ export interface AddressResponse {
   isDefault: boolean;
 }
 
-// Mock data for testing
-const MOCK_ADDRESSES: AddressResponse[] = [
-  {
-    id: 1 as unknown as BigInt,
-    fullName: "Nguyễn Văn A",
-    phone: "0997864743",
-    specificAddress: "123 Đường Nguyễn Huệ, Quận 1",
-    provinceName: "Hồ Chí Minh",
-    wardName: "Phường 1",
-    isDefault: true,
-  },
-  {
-    id: 2 as unknown as BigInt,
-    fullName: "Nguyễn Văn A",
-    phone: "0987654321",
-    specificAddress: "456 Đường Lê Lợi",
-    provinceName: "Hà Nội",
-    wardName: "Phường Hàng Trống",
-    isDefault: false,
-  },
-  {
-    id: 3 as unknown as BigInt,
-    fullName: "Trần Thị B",
-    phone: "0912345678",
-    specificAddress: "789 Đường Tôn Đức Thắng",
-    provinceName: "Đà Nẵng",
-    wardName: "Phường Hòa Cường Nam",
-    isDefault: false,
-  },
-];
+// // Mock data for testing
+// const MOCK_ADDRESSES: AddressResponse[] = [
+//   {
+//     id: 1 as unknown as BigInt,
+//     fullName: "Nguyễn Văn A",
+//     phone: "0997864743",
+//     specificAddress: "123 Đường Nguyễn Huệ, Quận 1",
+//     provinceName: "Hồ Chí Minh",
+//     wardName: "Phường 1",
+//     isDefault: true,
+//   },
+//   {
+//     id: 2 as unknown as BigInt,
+//     fullName: "Nguyễn Văn A",
+//     phone: "0987654321",
+//     specificAddress: "456 Đường Lê Lợi",
+//     provinceName: "Hà Nội",
+//     wardName: "Phường Hàng Trống",
+//     isDefault: false,
+//   },
+//   {
+//     id: 3 as unknown as BigInt,
+//     fullName: "Trần Thị B",
+//     phone: "0912345678",
+//     specificAddress: "789 Đường Tôn Đức Thắng",
+//     provinceName: "Đà Nẵng",
+//     wardName: "Phường Hòa Cường Nam",
+//     isDefault: false,
+//   },
+// ];
 
-class CustomerAddressService {
+export const  CustomerAddressService = {
   /**
    * Fetch all addresses for current customer
    */
   async getAddresses(): Promise<AddressResponse[]> {
     try {
-      // TODO: Uncomment to use real API
-      // const response = await apiClient.get<AddressResponse[]>("/customer/addresses");
-      // return response.data || [];
-      
-      // Mock: Return fake addresses
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(MOCK_ADDRESSES);
-        }, 300);
-      });
+      const accountId = useAuthStore.getState().user?.accountId;
+      const addresses = await apiClient.get<AddressResponse[]>(`/user/profile/address/${accountId}`);
+      return addresses.data;
     } catch (error) {
       console.error("Error fetching addresses:", error);
       return [];
     }
-  }
+  },
 
   /**
    * Fetch single address by ID
@@ -74,7 +67,7 @@ class CustomerAddressService {
       console.error("Error fetching address:", error);
       return null;
     }
-  }
+  },
 
   /**
    * Create new address
@@ -87,7 +80,7 @@ class CustomerAddressService {
       console.error("Error creating address:", error);
       return null;
     }
-  }
+  },
 
   /**
    * Update existing address
@@ -100,7 +93,7 @@ class CustomerAddressService {
       console.error("Error updating address:", error);
       return null;
     }
-  }
+  },
 
   /**
    * Delete address
@@ -113,7 +106,7 @@ class CustomerAddressService {
       console.error("Error deleting address:", error);
       return false;
     }
-  }
+  },
 
   /**
    * Set address as default
@@ -127,6 +120,7 @@ class CustomerAddressService {
       return false;
     }
   }
-}
+};
 
-export default new CustomerAddressService();
+
+  

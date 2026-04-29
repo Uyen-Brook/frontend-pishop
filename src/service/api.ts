@@ -15,7 +15,7 @@ export const apiClient = axios.create({
 //  Request Interceptor — lấy token từ storage (nguồn thật)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = storage.getToken(); //  đổi sang storage
+    const token = storage.getToken(); 
 
     if (token) {
       // đảm bảo headers luôn tồn tại
@@ -27,6 +27,7 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
 
 // Response Interceptor — xử lý 401 + sync store
 apiClient.interceptors.response.use(

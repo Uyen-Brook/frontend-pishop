@@ -10,15 +10,19 @@ export const ROUTES = {
   ABOUT: "/about",
   RETURN_POLICY: "/policy/return",
   
-  CUSTOMER_PROFILE: "/customer/profile",
-  CUSTOMER_ORDERS: "/customer/orders",
+  CUSTOMER_PROFILE: "/profile",
+  CUSTOMER_PROFILE_INFO: "/profile/info",
+  CUSTOMER_PROFILE_ADDRESS: "/profile/address",
+  CUSTOMER_PROFILE_ORDERS: "/profile/orders",
+  CUSTOMER_PROFILE_CHANGE_PASSWORD: "/profile/change-password",
+  CUSTOMER_PROFILE_SETTINGS: "/profile/settings",
   
 
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_PRODUCTS: "/admin/products",
   ADMIN_ORDERS: "/admin/orders",
   ADMIN_CUSTOMERS: "/admin/customers",
-  ADMIN_BRAND: "/admin/brand",
+  ADMIN_BRANDS: "/admin/brand",
   ADMIN_SUPPLIER: "/admin/supplier",
   ADMIN_CATEGORY: "/admin/category",
   ADMIN_ACCOUNT: "/admin/account",

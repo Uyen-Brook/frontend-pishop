@@ -2,30 +2,50 @@ import { Link } from "react-router-dom";
 import type { Product } from "../../types/index"
 import { useCartStore } from "../../store/CartStore";
 import "./ProductCard.css";
+import { useEffect } from "react";
+import { categoryService } from "../../service/custommer/categoryService";
+import { CartService } from "../../service/user/CartService";
 interface Props {
   product: Product;
 }
 
 export default function ProductCard({ product }: Props) {
   const addToLocalCart = useCartStore((state) => state.addToLocalCart);
+  // useEffect(() => {
+  //   const fetchCategories = async () => {
+  //     try {
+  //       const productId = 123;           
+  //       const quantity = 1;
+  //       const cartData = await CartService.addToCart(productId, quantity);
+  //       console.log("Cart data:", cartData);
+  //     } catch (error) {
+  //       console.error("Error fetching categories:", error);
+  //     }
+  //   };
+  //   fetchCategories();
+  // }, []);
 
   const discountedPrice = product.discountType === "PERCENT"
     ? product.price * (1 - (product.discountValue || 0) / 100)
     : product.discountType === "FIXED_AMOUNT"
-    ? product.price - (product.discountValue || 0)
-    : product.price;
+      ? product.price - (product.discountValue || 0)
+      : product.price;
 
   const discountPercent = product.discountType === "PERCENT"
     ? Math.floor(product.discountValue || 0)
     : product.discountType === "FIXED_AMOUNT"
-    ? Math.floor((((product.price - discountedPrice) / product.price) * 100))
-    : 0;
+      ? Math.floor((((product.price - discountedPrice) / product.price) * 100))
+      : 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    addToLocalCart(product.id, 1);
-    alert(`Đã thêm ${product.modelName} vào giỏ hàng!`);
-  };
+    try {
+      await CartService.addToCart(product.id, 1);
+      alert(`Đã thêm ${product.modelName} vào giỏ hàng!`);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+    }};
 
   return (
     <div className="product-card">

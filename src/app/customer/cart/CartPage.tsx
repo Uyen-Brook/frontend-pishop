@@ -9,6 +9,8 @@ import CartEmpty from "../../../components/cart/CartEmpty";
 import CartSummary from "../../../components/cart/CartSummary";
 import "./CartPage.css";
 import { useAuthStore } from "../../../store/authStore";
+import { debounce } from "lodash";
+import { getErrorMessage } from "../../../utils/getErrorMessage";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -16,8 +18,8 @@ export default function CartPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   // lấy id user
   const user = useAuthStore((state) => state.user);
-  
-   useEffect(() => {
+
+  useEffect(() => {
     if (user?.accountId) {
       // giả sử trong DecodedToken có field id hoặc accountId
       CartService.getCartByAccountId(user.accountId).then((data) => {
@@ -27,6 +29,7 @@ export default function CartPage() {
     }
   }, [user]);
 
+  // Toggle chọn sản phẩm
   const handleToggle = (id: number) => {
     if (!cart) return;
     const updatedItems = cart.items.map((item) =>
@@ -34,7 +37,7 @@ export default function CartPage() {
     );
     setCart({ ...cart, items: updatedItems });
   };
-
+  // chọn tất cả
   const handleSelectAll = (selectAll: boolean) => {
     if (!cart) return;
     const updatedItems = cart.items.map((item) => ({
@@ -44,8 +47,35 @@ export default function CartPage() {
     setCart({ ...cart, items: updatedItems });
   };
 
+  // Cập nhật số lượng sản phẩm (debounce)
+  const debounceMap = new Map<number, any>();
+  const updateQtyDebounced = (id: number, quantity: number) => {
+    if (!debounceMap.has(id)) {
+      debounceMap.set(
+        id,
+        debounce(async (q: number) => {
+          try {
+            await CartService.updateCartItem(id, q);
+          } catch (error: any) {
+            const msg = error.response?.data?.message || "Lỗi cập nhật";
+            alert(msg);
+          }
+        }, 500) // delay 500ms
+      );
+    }
+
+    debounceMap.get(id)(quantity);
+  };
+
   const handleUpdateQty = (id: number, change: number) => {
     if (!cart) return;
+    try {
+      CartService.updateCartItem(id, change);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      alert(`Lỗi khi cập nhật số lượng: ${errorMessage}`);
+      return;
+    }
     const updatedItems = cart.items.map((item) =>
       item.productId === id
         ? { ...item, quantity: change }
@@ -56,6 +86,13 @@ export default function CartPage() {
 
   const handleDeleteItem = (id: number) => {
     if (!cart) return;
+    try {
+      CartService.removeFromCart(id);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      alert(`Lỗi khi xóa sản phẩm: ${errorMessage}`);
+      return;
+    }
     const updatedItems = cart.items.filter((item) => item.productId !== id);
     setCart({ ...cart, items: updatedItems });
   };
@@ -109,12 +146,12 @@ export default function CartPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto">
         {/* MAIN LAYOUT */}
-        
+
         {cart.items.length === 0 && (
           <div>
             <CartEmpty />
           </div>
-          )}
+        )}
         <div className="cart-main-layout pb-20">
           {/* LEFT: CART ITEMS */}
           <div className="cart-page-left pl-10">
@@ -131,7 +168,7 @@ export default function CartPage() {
                 </label>
               </div>
             )}
-              
+
             {cart.items.length === 0 ? (
               <div>Related product</div>
             ) : (

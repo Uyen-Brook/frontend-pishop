@@ -1,7 +1,6 @@
 import React from "react";
-import { AddressResponse } from "../../../../service/custommer/customerAddressService";
-import { Province, Ward } from "../../../../service/custommer/locationService";
-
+import { AddressResponse } from "../../../../service/user/CustomerAddressService";
+import { Province, Ward } from "../../../../service//custommer/locationService";
 interface AddressSectionProps {
   formData: {
     fullName: string;
@@ -87,7 +86,7 @@ export default function AddressSection({
           {errors.fullName && <span className="error-message">{errors.fullName}</span>}
         </div>
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <label htmlFor="email">
             Email <span className="label-hint">(từ tài khoản)</span>
           </label>
@@ -101,7 +100,7 @@ export default function AddressSection({
             className={errors.email ? "input-error" : ""}
           />
           {errors.email && <span className="error-message">{errors.email}</span>}
-        </div>
+        </div> */}
 
         <div className="form-group">
           <label htmlFor="phone">Số điện thoại</label>
@@ -116,25 +115,9 @@ export default function AddressSection({
           />
           {errors.phone && <span className="error-message">{errors.phone}</span>}
         </div>
-
-        <div className="form-group">
-          <label htmlFor="specificAddress">Địa chỉ chi tiết</label>
-          <input
-            type="text"
-            id="specificAddress"
-            name="specificAddress"
-            value={formData.specificAddress}
-            onChange={onInputChange}
-            placeholder="Nhập chi tiết địa chỉ (số nhà, đường, ...)"
-            className={errors.specificAddress ? "input-error" : ""}
-          />
-          {errors.specificAddress && (
-            <span className="error-message">{errors.specificAddress}</span>
-          )}
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
+      
+        <div className="flex gap-4">
+          <div className="form-group flex 1">
             <label htmlFor="provinceName">Tỉnh/Thành phố</label>
             <select
               id="provinceName"
@@ -142,7 +125,8 @@ export default function AddressSection({
               value={formData.provinceName}
               onChange={onInputChange}
               disabled={isLoadingProvinces}
-              className={errors.provinceName ? "input-error" : ""}
+              className={`w-full ${errors.provinceName ? "input-error" : ""}`}
+
             >
               <option value="">-- Chọn tỉnh/thành phố --</option>
               {provinces.map((province) => (
@@ -156,7 +140,7 @@ export default function AddressSection({
             )}
           </div>
 
-          <div className="form-group">
+          <div className="form-group flex 1 ">
             <label htmlFor="wardName">Xã/Phường</label>
             <select
               id="wardName"
@@ -180,6 +164,23 @@ export default function AddressSection({
               <span className="hint-text">Chọn tỉnh/thành phố trước</span>
             )}
           </div>
+        </div>
+     
+         
+          <div className="form-group">
+          <label htmlFor="specificAddress">Địa chỉ chi tiết</label>
+          <input
+            type="text"
+            id="specificAddress"
+            name="specificAddress"
+            value={formData.specificAddress}
+            onChange={onInputChange}
+            placeholder="Nhập chi tiết địa chỉ (số nhà, đường, ...)"
+            className={errors.specificAddress ? "input-error" : ""}
+          />
+          {errors.specificAddress && (
+            <span className="error-message">{errors.specificAddress}</span>
+          )}
         </div>
 
         <div className="form-group">

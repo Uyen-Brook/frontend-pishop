@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { jwtDecode } from "jwt-decode";
 import type { DecodedToken } from "../types/index.ts";
 import { storage } from "../utils/storage.js";
+import { CartService } from "../service/user/CartService.js";
+import { useCartStore } from "./CartStore.js";
 
 export interface AuthState {
   user: DecodedToken | null;
@@ -37,7 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearExpiredToken: () => {
     if (!get().isTokenValid()) {
       storage.clearToken();
-      storage.clearLocalCart();
+      // storage.clearLocalCart();
       set({
         token: null,
         user: null,
@@ -69,7 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         // Token hết hạn
         storage.clearToken();
-        storage.clearLocalCart();
+        useCartStore.getState().clearCart();
         set({
           token: null,
           user: null,
@@ -79,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch {
       storage.clearToken();
-      storage.clearLocalCart();
+      useCartStore.getState().clearCart();
       set({
         token: null,
         user: null,
@@ -93,13 +95,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const decoded = jwtDecode<DecodedToken>(token);
       storage.setToken(token);
-      storage.clearLocalCart(); // Xóa cart local khi login
+
+      // Set state trước
       set({
         token,
         user: decoded,
         isAuthenticated: true,
         isInitialized: true,
       });
+
+      // Sau khi state đã được set, truyền auth state trực tiếp để đồng bộ cart
+      CartService.syncLocalCartToServer({
+        isAuthenticated: true,
+        accountId: decoded.accountId,
+      });
+
       return decoded;
     } catch {
       set({ isInitialized: true });
@@ -109,13 +119,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     storage.clearToken();
-    storage.clearLocalCart();
+    // Clear local cart (CartStore dùng zustand persist nên tự clear)
+    useCartStore.getState().clearCart();
     set({
       token: null,
       user: null,
       isAuthenticated: false,
       isInitialized: true,
     });
+  },
+  getAccountId: () => {
+    const { user } = get();
+    return user?.accountId ?? null;
   },
 }));
 

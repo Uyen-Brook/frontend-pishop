@@ -72,9 +72,9 @@ export default function LoginPage() {
 
         {/* HEADER */}
         <div className="login-header">
-          <h1 className="brand-title">Login</h1>
+          <h1 className="brand-title">ĐĂNG NHẬP</h1>
           <p className="brand-subtitle">
-            Login to your account to order device in ManpiShop!
+           Tham gia mua sắm ngay với PiShop
           </p>
         </div>
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
             <label>Email</label>
             <input
               type="email"
-              placeholder="your email address"
+              placeholder="Nhập địa chỉ email"
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setEmail(e.target.value.trim())
@@ -95,10 +95,10 @@ export default function LoginPage() {
           </div>
 
           <div className="input-group">
-            <label>Password</label>
+            <label>Mật khẩu</label>
             <input
               type="password"
-              placeholder="your password.."
+              placeholder="Mật khẩu"
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setPassword(e.target.value)
@@ -134,9 +134,9 @@ export default function LoginPage() {
         {/* FOOTER */}
         <div className="login-links">
           <span>
-            Do you have no an account?{" "}
+            Bạn chưa có tài khoản? {" "}
             <a href={ROUTES.REGISTER} className="link-orange">
-              Register
+              Đăng ký ngay
             </a>
           </span>
           </div>

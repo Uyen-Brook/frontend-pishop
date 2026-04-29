@@ -11,11 +11,16 @@ import {
   FaShoppingCart,
   FaSearch,
 } from "react-icons/fa";
+import { useEffect } from "react";
 
 
 export default function Header() {
-  const { user, isAuthenticated, logout } = useAuthStore();
-
+  const { user, isAuthenticated, logout, isTokenValid} = useAuthStore();
+    useEffect(() => {
+    if (!isTokenValid()) {
+      logout();
+    }
+  }, [isTokenValid, logout]);
   return (
     <header className="max-w-7xl mx-auto">
 

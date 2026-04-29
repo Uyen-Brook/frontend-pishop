@@ -291,11 +291,23 @@ const ProductDetailComponent = ({ id }: Props) => {
           </div>
 
           {/* highlights */}
-          <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-gray-600 space-y-1">
+  {product.specification?.["Processor"] && (
+    <li>✔ {renderSpecValue(product.specification["Processor"])}</li>
+  )}
+  {product.specification?.["Display"] && (
+    <li>✔ {renderSpecValue(product.specification["Display"])}</li>
+  )}
+  {product.specification?.["Storage"] && (
+    <li>✔ {renderSpecValue(product.specification["Storage"])}</li>
+  )}
+</ul>
+
+          {/* <ul className="text-sm text-gray-600 space-y-1">
             {product.specification["Processor"] && <li>✔ {renderSpecValue(product.specification["Processor"])}</li>}
             {product.specification["Display"] && <li>✔ {renderSpecValue(product.specification["Display"])}</li>}
             {product.specification["Storage"] && <li>✔ {renderSpecValue(product.specification["Storage"])}</li>}
-          </ul>
+          </ul> */}
 
           {/* quantity */}
           <div className="flex items-center gap-3">

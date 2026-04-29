@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CartItem } from "../../../types";
 import { ROUTES } from "../../../config/routes";
 import { useAuthStore } from "../../../store/authStore";
-import customerAddressService, { AddressResponse } from "../../../service/custommer/customerAddressService";
+import  { AddressResponse, CustomerAddressService} from "../../../service/user/CustomerAddressService";
 import locationService, { Province, Ward } from "../../../service/custommer/locationService";
+import { orderService, CreateOrderRequest } from  "../../../service/user/orderService";
 import AddressSection from "../../../components/layout/custommer/checkout/AddressSection";
 import PaymentMethodSection from "../../../components/layout/custommer/checkout/PaymentMethodSection";
 import OrderSummary from "../../../components/layout/custommer/checkout/OrderSummary";
 import "./CheckoutPage.css";
-
 
 interface LocationState {
   selectedItems: CartItem[];
@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Location states
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -52,7 +53,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchAddresses = async () => {
       setIsLoadingAddresses(true);
-      const addresses = await customerAddressService.getAddresses();
+      const addresses = await CustomerAddressService.getAddresses();
       setSavedAddresses(addresses);
 
       // Auto-select default address
@@ -230,20 +231,69 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!validateForm()) {
       return;
     }
 
-    // TODO: Submit order to backend
-    console.log("Order placed:", {
-      items: selectedItems,
-      totalPayable,
-      shippingInfo: formData,
-    });
+    setIsSubmitting(true);
 
-    alert("Đặt hàng thành công! (Đây là demo)");
-    navigate(ROUTES.HOME);
+    try {
+      // Find province and ward codes
+      const selectedProvince = provinces.find((p) => p.name === formData.provinceName);
+      const selectedWard = wards.find((w) => w.name === formData.wardName);
+
+      if (!selectedProvince || !selectedWard) {
+        alert("Vui lòng chọn đầy đủ tỉnh/thành phố và xã/phường");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Build order request matching backend's OrderRequest
+      const orderRequest: CreateOrderRequest = {
+        accountId: authUser?.accountId || 0,
+        toName: formData.fullName,
+        toPhone: formData.phone,
+        toProvinceCode: selectedProvince.code,
+        toWardCode: selectedWard.code,
+        toAddress: formData.specificAddress,
+        paymentMethod: formData.paymentMethod as "COD" |"BANK",
+        items: selectedItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      };
+
+      console.log("Creating order:", orderRequest);
+
+      const response = await orderService.createOrder(orderRequest);
+
+      if (response) {
+        // Nếu chọn BANK (thanh toán VNPay) thì gọi API redirect đến VNPay
+        if (formData.paymentMethod === "BANK") {
+          try {
+            const vnpayUrl = await orderService.submitOrder(totalPayable, `Order_${response.id}`);
+            if (vnpayUrl) {
+              window.location.href = vnpayUrl;
+              return;
+            }
+          } catch (paymentError) {
+            console.error("Error redirecting to VNPay:", paymentError);
+            alert("Có lỗi xảy ra khi chuyển sang thanh toán VNPay. Vui lòng thử lại!");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
+        alert(`Đặt hàng thành công! Mã đơn hàng: ${response.id}`);
+        navigate(ROUTES.HOME);
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert("Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -278,6 +328,7 @@ export default function CheckoutPage() {
           totalPayable={totalPayable}
           onPlaceOrder={handlePlaceOrder}
           onBackToCart={() => navigate(ROUTES.CART)}
+          isSubmitting={isSubmitting}
         />
       </div>
 

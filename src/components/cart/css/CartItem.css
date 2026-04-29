@@ -18,8 +18,8 @@
 }
 
 .cart-item-card.selected {
-    border: 2px solid #ff4d4f;
-    background: #fff8f6;
+    border: 1px solid #ff4d4f;
+    background: #fffefe;
 }
 
 .cart-item-card input[type="checkbox"] {

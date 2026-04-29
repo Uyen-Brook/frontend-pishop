@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/register.css";
-import {ROUTES} from "../../../config/routes";
+import { ROUTES } from "../../../config/routes";
 import { API_BASE_URL } from "../../../config/env";
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ export default function RegisterPage() {
         }, 1500);
       } else if (response.status === 400) {
         const errorText = await response.text();
-        setError(errorText || "Email already exists");
+        setError(errorText || "Email đã tồn tại vui lòng đăng kí bằng email khác");
       } else {
         setError("Đăng ký thất bại, vui lòng thử lại");
       }
@@ -91,44 +91,44 @@ export default function RegisterPage() {
 
         {/* HEADER */}
         <div className="auth-header">
-          <h1 className="auth-title">Register</h1>
+          <h1 className="auth-title">ĐĂNG KÝ</h1>
         </div>
-        
+
         {/* FORM */}
-        <form className="auth-form" onSubmit={handleSubmit}>
-
-          <div className="input-field">
-            <label>First Name</label>
-            <input
-              type="text"
-              name="firstName"
-              placeholder="Your first name..."
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="input-field">
-            <label>Last Name</label>
+         <div className="input-field">
+            <label>Họ</label>
             <input
               type="text"
               name="lastName"
-              placeholder="Your last name..."
+              placeholder="Họ"
               value={formData.lastName}
               onChange={handleChange}
               required
               disabled={loading}
             />
           </div>
+          
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="input-field">
+            <label>Tên</label>
+            <input
+              type="text"
+              name="firstName"
+              placeholder="Tên"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+         
 
           <div className="input-field">
             <label>Email</label>
             <input
               type="email"
               name="email"
-              placeholder="your email address"
+              placeholder="nhập email"
               value={formData.email}
               onChange={handleChange}
               required
@@ -141,7 +141,7 @@ export default function RegisterPage() {
             <input
               type="password"
               name="password"
-              placeholder="your password.."
+              placeholder="Mật khẩu"
               value={formData.password}
               onChange={handleChange}
               required
@@ -178,7 +178,7 @@ export default function RegisterPage() {
         <div className="auth-footer">
           <p>
             Already have an account?{" "}
-            <a href= {ROUTES.LOGIN} className="orange-link">
+            <a href={ROUTES.LOGIN} className="orange-link">
               Login
             </a>
           </p>
