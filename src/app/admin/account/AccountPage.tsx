@@ -226,16 +226,12 @@ const AccountPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-6">
+    <div className="w-full">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-navy-700 dark:text-white">
-            Account Management
+            Quản lý tài khoản
           </h2>
-
-          <p className="mt-1 text-gray-600 dark:text-gray-300">
-            Quản lý tài khoản hệ thống
-          </p>
         </div>
 
         <button

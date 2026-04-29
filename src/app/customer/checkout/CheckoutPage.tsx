@@ -22,16 +22,21 @@ export default function CheckoutPage() {
   const selectedItems = state?.selectedItems || [];
   const authUser = useAuthStore((state) => state.user);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: authUser?.email || "",
-    phone: "",
-    specificAddress: "",
-    provinceName: "",
-    wardName: "",
-    notes: "",
-    paymentMethod: "COD",
-  });
+const [formData, setFormData] = useState({
+  fullName: "",
+  email: authUser?.email || "",
+  phone: "",
+  specificAddress: "",
+
+  provinceCode: "",
+  wardCode: "",
+
+  provinceName: "",
+  wardName: "",
+
+  notes: "",
+  paymentMethod: "COD",
+});
 
   const [errors, setErrors] = useState<{
     [key: string]: string;
@@ -163,6 +168,8 @@ export default function CheckoutPage() {
       phone: address.phone,
       specificAddress: address.specificAddress,
       provinceName: address.provinceName,
+      provinceCode: address.provinceCode,
+      wardCode: address.wardCode,
       wardName: address.wardName,
     }));
     setSelectedAddressId(Number(address.id));

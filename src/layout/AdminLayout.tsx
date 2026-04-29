@@ -10,7 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out
+        className={`fixed inset-y-0 left-0 z-30 w-44 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out
         md:static md:translate-x-0
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >

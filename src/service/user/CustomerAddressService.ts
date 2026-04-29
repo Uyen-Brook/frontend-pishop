@@ -1,12 +1,18 @@
 import { apiClient } from "../api";
 import { useAuthStore } from "../../store/authStore";
 export interface AddressResponse {
-  id: BigInt;
+  id: number;
+
   fullName: string;
   phone: string;
   specificAddress: string;
+
+  provinceCode: string;
+  wardCode: string;
+
   provinceName: string;
   wardName: string;
+
   isDefault: boolean;
 }
 

@@ -1,4 +1,3 @@
-// InputField.tsx
 import React from "react";
 
 type InputFieldProps = {
@@ -10,6 +9,10 @@ type InputFieldProps = {
   variant?: "auth" | "default";
   state?: "error" | "success" | "default";
   disabled?: boolean;
+
+  value?: string;
+  name?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -21,21 +24,31 @@ const InputField: React.FC<InputFieldProps> = ({
   variant = "default",
   state = "default",
   disabled = false,
+
+  value,
+  name,
+  onChange,
 }) => {
   return (
     <div className={extra}>
       <label
         htmlFor={id}
         className={`text-sm text-navy-700 dark:text-white ${
-          variant === "auth" ? "ml-1.5 font-medium" : "ml-3 font-bold"
+          variant === "auth"
+            ? "ml-1.5 font-medium"
+            : "ml-3 font-bold"
         }`}
       >
         {label}
       </label>
+
       <input
         disabled={disabled}
         type={type}
         id={id}
+        name={name}
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
         className={`mt-2 flex h-12 w-full items-center justify-center rounded-xl border bg-white/0 p-3 text-sm outline-none ${
           disabled

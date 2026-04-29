@@ -29,11 +29,14 @@ export interface Address {
   fullName: string;
   phone: string;
   specificAddress: string;
+
   provinceCode: string;
   wardCode: string;
+
+  provinceName: string;
+  wardName: string;
   isDefault: boolean;
 }
-
 export interface AddressPayload {
   fullName: string;
   phone: string;
