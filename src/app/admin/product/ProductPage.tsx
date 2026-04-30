@@ -1,14 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { useEffect } from "react";
 import Card from "../../../components/card/Card";
-import Widget from "../../../components/widget/Widget";
 import SearchInput from "../../../components/search/SearchInput";
 import Select from "../../../components/select/Select";
 import StatsCard from "../../../components/card/StatsCard";
 import AddNewProduct from "../../../components/layout/admin/product/AddProductForm";
 import { ProductService } from "../../../service/admin/ProductService";
+import { CategoryService, CategoryResponse } from "../../../service/admin/CategoryService";
+import {ProductResponse, ProductCreateRequest, ProductUpdateRequest, 
+    SupplierResponse, SupplierRequest, SupplierDetailResponse, 
+  ProductStatus, productStatusLabels} from "../../../types/index";
+import { brandService, BrandRequest, BrandResponse } from "../../../service/admin/BrandService";
+import { SupplierService } from "../../../service/admin/SupplierService";
+
 import {
   Package,
   ShoppingCart,
@@ -19,75 +25,87 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { Product, Category, Brand, SupplierResponse } from "../../../types/index";
-import { productService } from "../../../service/custommer/productService";
-
-// ======================================
-// MOCK DATA
-// ======================================
-
-const products = [
-  {
-    id: 1,
-    name: "iPhone 15 Pro Max",
-    sku: "IP15PM-128",
-    category: "Electronics",
-    price: 1199,
-    stock: 25,
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "MacBook Pro M3",
-    sku: "MBP-M3-512",
-    category: "Electronics",
-    price: 2499,
-    stock: 10,
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Nike Air Jordan",
-    sku: "NK-AJ-001",
-    category: "Fashion",
-    price: 220,
-    stock: 0,
-    status: "Out of Stock",
-  },
-  {
-    id: 4,
-    name: "Atomic Habits",
-    sku: "BOOK-001",
-    category: "Books",
-    price: 25,
-    stock: 120,
-    status: "Inactive",
-  },
-];
-
-// ======================================
-// SELECT OPTIONS
-// ======================================
-
-const categoryOptions = [
-  { label: "All Categories", value: "all" },
-  { label: "Electronics", value: "Electronics" },
-  { label: "Fashion", value: "Fashion" },
-  { label: "Books", value: "Books" },
-];
-
-const statusOptions = [
-  { label: "All Status", value: "all" },
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
-  { label: "Out of Stock", value: "Out of Stock" },
-];
 
 // ======================================
 // MAIN PAGE
 // ======================================
+const statusOptions = productStatusLabels;
 
 export default function AdminProductsPage() {
+
+  // product
+const [products, setProducts] = useState<ProductResponse[]>([]);
+const [loading, setLoading] = useState(false);
+const [page, setPage] = useState(0);
+const [size, setSize] = useState(10);
+const [totalPages, setTotalPages] = useState(0);
+
+// category
+const [categories, setCategories] = useState<CategoryResponse[]>([]);
+useEffect(() => {
+  loadProducts();
+  loadCategories();
+  loadBrands();
+  loadSupplier();
+}, []);
+
+const loadCategories = async () => {
+  try {
+    const res = await CategoryService.getAll();
+    setCategories(res);
+  } catch (error) {
+    console.error("Cannot load categories", error);
+  }
+};
+// category option
+const categoryOptions = useMemo(() => {
+  return [
+    { label: "Tất cả danh mục", value: "all" },
+    ...categories.map((c) => ({
+      label: c.name,
+      value: c.id, // hoặc c.name tùy backend filter
+    })),
+  ];
+}, [categories]);
+// brand
+const [brands, setBrands] = useState<BrandResponse[]>([]);
+const loadBrands = async ()=>{
+  try{
+    const res = await brandService.getAll();
+    setBrands(res);
+  }catch(error){
+     console.error("Cannot load brands", error);
+  }
+}
+//supplier
+const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
+ const loadSupplier = async () => {
+  try {
+    const res = await SupplierService.getAll();
+    setSuppliers(res);
+  } catch (error) {
+    console.error(error);
+    alert("Không thể kết nối API");
+  } 
+};
+//product
+  const loadProducts = async (pageNumber = 0) => {
+  try {
+    setLoading(true);
+
+    const res = await ProductService.getAll(pageNumber, size);
+
+    setProducts(res.content);
+    setPage(res.number);
+    setTotalPages(res.totalPages);
+
+  } catch (error) {
+    console.error(error);
+    alert("Không thể kết nối API");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ======================================
   // STATES
@@ -101,21 +119,22 @@ export default function AdminProductsPage() {
   // FILTER PRODUCTS
   // ======================================
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchSearch = product.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
+const filteredProducts = useMemo(() => {
+  return products.filter((product) => {
+    const matchSearch =
+    product.modelName?.toLowerCase().includes(search.toLowerCase()) ||
+    product.brandName?.toLowerCase().includes(search.toLowerCase());
 
-      const matchCategory =
-        category === "all" || product.category === category;
+    const matchCategory =
+  category === "all" ||
+  product.categoryName === categories.find(c => c.id === Number(category))?.name;
 
-      const matchStatus =
-        status === "all" || product.status === status;
+    const matchStatus =
+  status === "all" || product.productStatus === status;
 
-      return matchSearch && matchCategory && matchStatus;
-    });
-  }, [search, category, status]);
+    return matchSearch && matchCategory && matchStatus;
+  });
+}, [products, search, category, status]);
 
   // ======================================
   // STATS
@@ -125,28 +144,13 @@ export default function AdminProductsPage() {
 
   const totalOrders = 567;
 
-  const lowStock = products.filter((p) => p.stock < 20).length;
+  const lowStock = products.filter((p) => p.quantity < 20).length;
 
   const revenue = "$45,780";
 
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+ 
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-
-      const res = await ProductService.getAll(0, 10);
-      setProducts(res.content); // ✅ lấy content
-
-    } catch (error) {
-      alert("Có lỗi xảy ra, không thể kết nối API");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ======================================
   // RENDER
@@ -237,10 +241,16 @@ export default function AdminProductsPage() {
             />
 
             <Select
-              value={status}
-              onChange={(value) => setStatus(String(value))}
-              options={statusOptions}
-            />
+  value={status}
+  onChange={(value) => setStatus(String(value))}
+  options={[
+    { label: "Tất cả trạng thái", value: "all" },
+    ...Object.entries(productStatusLabels).map(([key, label]) => ({
+      label,
+      value: key,
+    })),
+  ]}
+/>
           </div>
         </div>
       </Card>
@@ -257,7 +267,6 @@ export default function AdminProductsPage() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Products List
               </h2>
-              <AddNewProduct />
               <p className="mt-1 text-sm text-gray-500">
                 Showing {filteredProducts.length} products
               </p>
@@ -311,11 +320,11 @@ export default function AdminProductsPage() {
 
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-white">
-                          {product.name}
+                          {product.modelName}
                         </h4>
 
                         <p className="text-sm text-gray-500">
-                          SKU: {product.sku}
+                          SKU: {product.quantity}
                         </p>
                       </div>
                     </div>
@@ -323,7 +332,7 @@ export default function AdminProductsPage() {
 
                   {/* CATEGORY */}
                   <td className="px-6 py-5 text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {product.category}
+                    {product.categoryName}
                   </td>
 
                   {/* PRICE */}
@@ -334,27 +343,26 @@ export default function AdminProductsPage() {
                   {/* STOCK */}
                   <td className="px-6 py-5">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${product.stock < 20
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${product.quantity < 20
                           ? "bg-red-100 text-red-600"
                           : "bg-green-100 text-green-600"
                         }`}
                     >
-                      {product.stock} items
+                      {product.quantity} items
                     </span>
                   </td>
 
                   {/* STATUS */}
                   <td className="px-6 py-5">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${product.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : product.status === "Inactive"
-                            ? "bg-gray-200 text-gray-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                    >
-                      {product.status}
-                    </span>
+  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+    product.productStatus === "OUT_OF_STOCK"
+      ? "bg-red-100 text-red-700"
+      : "bg-green-100 text-green-700"
+  }`}
+>
+  {productStatusLabels[product.productStatus as ProductStatus]}
+</span>
                   </td>
 
                   {/* ACTIONS */}

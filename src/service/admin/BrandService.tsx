@@ -1,77 +1,75 @@
-// supplierService.ts
 import { apiClient } from "../api";
 
-export interface SupplierRequest {
-  name?: string;
-  taxcode?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  note?: string;
+// =========================
+// TYPES
+// =========================
+
+export interface BrandRequest {
+  name: string;
   website?: string;
+  image?: File;
 }
 
-export interface SupplierResponse {
+export interface BrandResponse {
   id: number;
   name: string;
-  logo?: string;
-  taxcode?: string;
-  phone?: string;
-  address?: string;
+  website?: string;
+  image?: string;
 }
 
-const BASE_URL = "/admin/suppliers";
+// =========================
+// SERVICE
+// =========================
 
-export const SupplierService = {
-  /**
-   * Tạo supplier
-   */
-  async createSupplier(
-    data: SupplierRequest,
-    logo?: File
-  ): Promise<SupplierResponse> {
+const BASE_URL = "/admin/brands";
+
+export const brandService = {
+  // =====================
+  // CREATE
+  // =====================
+  create: async (data: BrandRequest) => {
     const formData = new FormData();
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
+    formData.append("name", data.name);
 
-    if (logo) {
-      formData.append("logo", logo);
+    if (data.website) {
+      formData.append("website", data.website);
     }
 
-    const response = await apiClient.post(BASE_URL, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    if (data.image) {
+      formData.append("image", data.image);
+    }
 
-    return response.data;
+    const res = await apiClient.post<BrandResponse>(
+      BASE_URL,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return res.data;
   },
 
-  /**
-   * Cập nhật supplier
-   */
-  async updateSupplier(
-    id: number,
-    data: SupplierRequest,
-    logo?: File
-  ): Promise<SupplierResponse> {
+  // =====================
+  // UPDATE
+  // =====================
+  update: async (id: number, data: BrandRequest) => {
     const formData = new FormData();
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
+    formData.append("name", data.name);
 
-    if (logo) {
-      formData.append("logo", logo);
+    if (data.website) {
+      formData.append("website", data.website);
     }
 
-    const response = await apiClient.patch(
+    if (data.image) {
+      formData.append("image", data.image);
+    }
+
+    const res = await apiClient.put<BrandResponse>(
       `${BASE_URL}/${id}`,
       formData,
       {
@@ -81,55 +79,50 @@ export const SupplierService = {
       }
     );
 
-    return response.data;
+    return res.data;
   },
 
-  /**
-   * Xóa supplier
-   */
-  async deleteSupplier(id: number): Promise<string> {
-    const response = await apiClient.delete(
+  // =====================
+  // DELETE
+  // =====================
+  delete: async (id: number) => {
+    const res = await apiClient.delete<string>(
       `${BASE_URL}/${id}`
     );
-
-    return response.data;
+    return res.data;
   },
 
-  /**
-   * Lấy tất cả supplier
-   */
-  async getAllSuppliers(): Promise<SupplierResponse[]> {
-    const response = await apiClient.get(BASE_URL);
-
-    return response.data;
+  // =====================
+  // GET ALL
+  // =====================
+  getAll: async () => {
+    const res = await apiClient.get<BrandResponse[]>(
+      BASE_URL
+    );
+    return res.data;
   },
 
-  /**
-   * Search supplier
-   */
-  async searchSuppliers(
-    keyword?: string
-  ): Promise<SupplierResponse[]> {
-    const response = await apiClient.get(
+  // =====================
+  // GET BY ID
+  // =====================
+  getById: async (id: number) => {
+    const res = await apiClient.get<BrandResponse>(
+      `${BASE_URL}/${id}`
+    );
+    return res.data;
+  },
+
+  // =====================
+  // SEARCH
+  // =====================
+  search: async (keyword: string) => {
+    const res = await apiClient.get<BrandResponse[]>(
       `${BASE_URL}/search`,
       {
         params: { keyword },
       }
     );
 
-    return response.data;
-  },
-
-  /**
-   * Lấy supplier theo id
-   */
-  async getSupplierById(
-    id: number
-  ): Promise<SupplierResponse> {
-    const response = await apiClient.get(
-      `${BASE_URL}/${id}`
-    );
-
-    return response.data;
+    return res.data;
   },
 };

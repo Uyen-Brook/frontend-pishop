@@ -1,8 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Card from "../../../../components/card/Card";
 import InputField from "../../../../components/field/InputField";
 import Label from "../../../../components/field/LabelField";
 import Switch from "../../../../components/field/Switch";
+import { brandService, BrandResponse } from "../../../../service/admin/BrandService";
+import { CategoryService, CategoryResponse } from "../../../../service/admin/CategoryService";
+import { SupplierService } from "../../../../service/admin/SupplierService";
+import { ProductService } from "../../../../service/admin/ProductService";
 import {
     ProductStatus,
     productStatusLabels,
@@ -79,24 +83,23 @@ const AddNewProduct: React.FC = () => {
     // sửa type form state
     const [form, setForm] = useState<ProductCreateRequest>({
         modelName: "",
-        specification: "[]",
-        thumbnail: "",
+        modelNumber: "",
+        specification: "",
         description: "",
 
         importPrice: 0,
         taxVat: 0,
         price: 0,
 
-        modelNumber: "",
-        listImage: "[]",
-
-        quanlity: 0,
-
+        quantity: 0,
         productStatus: "NEW",
 
         brandId: 0,
         supplierId: 0,
         categoryId: 0,
+
+        thumbnail: undefined,
+        listImage: [],
     });
 
     const [publishToStore, setPublishToStore] = useState(true);
@@ -124,7 +127,86 @@ const AddNewProduct: React.FC = () => {
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const thumbnailRef = useRef<HTMLInputElement>(null);
     const galleryRef = useRef<HTMLInputElement>(null);
+    // build specific
+    const buildSpecification = () => {
+        const obj: Record<string, string> = {};
 
+        specs.forEach((s) => {
+            if (s.key.trim() && s.value.trim()) {
+                obj[s.key] = s.value;
+            }
+        });
+
+        return JSON.stringify(obj);
+    };
+
+
+    useEffect(() => {
+        loadCategories();
+        loadBrands();
+        loadSupplier();
+    }, []);
+
+    const [categories, setCategories] = useState<CategoryResponse[]>([]);
+    const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
+    const [brands, setBrands] = useState<BrandResponse[]>([]);
+    const loadCategories = async () => {
+        try {
+            const res = await CategoryService.getAll();
+            setCategories(res);
+        } catch (error) {
+            console.error("Cannot load categories", error);
+        }
+    };
+
+    // brand
+    const loadBrands = async () => {
+        try {
+            const res = await brandService.getAll();
+            setBrands(res);
+        } catch (error) {
+            console.error("Cannot load brands", error);
+        }
+    }
+
+    //supplier
+    const loadSupplier = async () => {
+        try {
+            const res = await SupplierService.getAll();
+            setSuppliers(res);
+        } catch (error) {
+            console.error(error);
+            alert("Không thể kết nối API");
+        }
+    };
+    // valid form
+    const validateForm = () => {
+        const errors: string[] = [];
+
+        if (!form.modelName?.trim()) errors.push("Product name is required");
+        if (!form.modelNumber?.trim()) errors.push("Model number is required");
+
+        if (!form.categoryId) errors.push("Category is required");
+        if (!form.brandId) errors.push("Brand is required");
+        if (!form.supplierId) errors.push("Supplier is required");
+
+        if (form.price === undefined || form.price <= 0)
+            errors.push("Price must be greater than 0");
+
+        if (form.quantity === undefined || form.quantity < 0)
+            errors.push("Quantity cannot be negative");
+
+        if (!form.description?.trim())
+            errors.push("Description is required");
+
+        if (!form.thumbnail)
+            errors.push("Thumbnail is required");
+
+        if (!form.listImage || form.listImage.length === 0)
+            errors.push("At least one image is required");
+
+        return errors;
+    };
     // ── Handlers ───────────────────────────────────────────────────────────────
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -135,7 +217,14 @@ const AddNewProduct: React.FC = () => {
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value === "" ? 0 : Number(value) }));
+
+        // chặn ký tự không hợp lệ
+        if (!/^\d*\.?\d*$/.test(value)) return;
+
+        setForm((prev) => ({
+            ...prev,
+            [name]: value === "" ? "" : Number(value),
+        }));
     };
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -161,19 +250,19 @@ const AddNewProduct: React.FC = () => {
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        setThumbnailPreview(url);
-        setForm((prev) => ({ ...prev, thumbnail: file.name }));
+
+        setForm((prev) => ({
+            ...prev,
+            thumbnail: file,
+        }));
     };
 
     const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files ?? []);
-        const urls = files.map((f) => URL.createObjectURL(f));
-        setGalleryPreviews((prev) => [...prev, ...urls].slice(0, 6));
-        const names = files.map((f) => f.name);
+
         setForm((prev) => ({
             ...prev,
-            listImage: JSON.stringify([...JSON.parse(prev.listImage), ...names]),
+            listImage: [...(prev.listImage ?? []), ...files],
         }));
     };
 
@@ -181,23 +270,64 @@ const AddNewProduct: React.FC = () => {
     const buildPayload = (): ProductCreateRequest => {
         return {
             ...form,
-            specification: JSON.stringify(
-                specs.filter((s) => s.key.trim() && s.value.trim())
-            ),
+
+            specification: buildSpecification(),
+
+            // ensure clean data
+            thumbnail: form.thumbnail,
+            listImage: form.listImage,
         };
     };
 
     const handleSave = () => {
         const payload = buildPayload();
-        console.log("ProductCreateRequest payload:", payload);
-        alert("Saved! Check console for payload.");
-    };
 
+        const formData = new FormData();
+
+        formData.append("modelName", payload.modelName ?? "");
+        formData.append("modelNumber", payload.modelNumber ?? "");
+        formData.append("description", payload.description ?? "");
+
+        formData.append("importPrice", String(payload.importPrice ?? 0));
+        formData.append("taxVat", String(payload.taxVat ?? 0));
+        formData.append("price", String(payload.price ?? 0));
+        formData.append("quantity", String(payload.quantity ?? 0));
+
+        formData.append("productStatus", payload.productStatus ?? "NEW");
+
+        formData.append("brandId", String(payload.brandId ?? 0));
+        formData.append("supplierId", String(payload.supplierId ?? 0));
+        formData.append("categoryId", String(payload.categoryId ?? 0));
+
+        formData.append("specification", payload.specification ?? "{}");
+
+        if (payload.thumbnail) {
+            formData.append("thumbnail", payload.thumbnail);
+        }
+
+        payload.listImage?.forEach((file) => {
+            formData.append("listImage", file);
+        });
+
+        console.log("FORMDATA READY:", formData);
+
+        // call API
+        // productService.create(formData)
+    };
     const handleDraft = () => {
         const payload = buildPayload();
         console.log("Draft payload:", payload);
         alert("Saved as draft! Check console for payload.");
     };
+
+    // phần tính lợi nhuận trên 1 sản phẩm
+    const profitPerItem = useMemo(() => {
+        return (Number(form.price || 0) - Number(form.importPrice || 0));
+    }, [form.price, form.importPrice]);
+
+    const totalProfit = useMemo(() => {
+        return profitPerItem * Number(form.quantity || 0);
+    }, [profitPerItem, form.quantity]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
@@ -214,7 +344,7 @@ const AddNewProduct: React.FC = () => {
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
-                            Add New Product
+                            Nhập sản phẩm mới
                         </h1>
                         <p className="text-sm text-gray-400 mt-1">
                             Create a new listing for your global tech inventory.
@@ -222,19 +352,19 @@ const AddNewProduct: React.FC = () => {
                     </div>
                     <div className="flex gap-2">
                         <button className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            Cancel
+                            Hủy
                         </button>
                         <button
                             onClick={handleDraft}
                             className="px-4 py-2 text-sm font-medium rounded-lg border border-red-400 text-red-500 bg-white hover:bg-red-50 transition"
                         >
-                            Save as Draft
+                            Lưu bản nháp
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition"
                         >
-                            Save Product
+                            Lưu sản phẩm
                         </button>
                     </div>
                 </div>
@@ -250,12 +380,12 @@ const AddNewProduct: React.FC = () => {
                             <div className="flex items-center gap-2 mb-5">
                                 <InfoIcon />
                                 <h2 className="text-sm font-semibold text-gray-700 dark:text-white">
-                                    Product Information
+                                    Thông tin sản
                                 </h2>
                             </div>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <InputField
-                                    label="Product Name"
+                                    label="Tên sản phẩm"
                                     id="modelName"
                                     name="modelName"
                                     value={form.modelName}
@@ -263,7 +393,7 @@ const AddNewProduct: React.FC = () => {
                                     placeholder="e.g. MacBook Pro M3"
                                 />
                                 <InputField
-                                    label="Model Number"
+                                    label="Số Model"
                                     id="modelNumber"
                                     name="modelNumber"
                                     value={form.modelNumber}
@@ -273,7 +403,7 @@ const AddNewProduct: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <Label htmlFor="categoryId" text="Category" />
+                                    <Label htmlFor="categoryId" text="Danh mục sản phẩm" />
                                     <select
                                         id="categoryId"
                                         name="categoryId"
@@ -281,18 +411,74 @@ const AddNewProduct: React.FC = () => {
                                         onChange={handleChange}
                                         className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
                                     >
-                                        <option value="">Select Category</option>
+                                        <option value="">------- chọn danh mục  ------</option>
                                         {CATEGORIES.map((c) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
                                 </div>
-                                <InputField
-                                    label="Brand"
-                                    id="brandNameDisplay"
-                                    placeholder="e.g. Apple"
-                                    value={form.modelName ? undefined : ""}
-                                />
+                                <div>
+                                    <Label htmlFor="brandId" text="Thương hiệu(brand)" />
+                                    <select
+                                        id="brandId"
+                                        name="brandId"
+                                        value={form.brandId}
+                                        onChange={handleChange}
+                                        className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm"
+                                    >
+                                        <option value="">------- Chọn thương hiệu ------</option>
+                                        {brands.map((b) => (
+                                            <option key={b.id} value={b.id}>
+                                                {b.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <Label htmlFor="supplierId" text="Nhà cung cấp" />
+                                    <select
+                                        id="supplierId"
+                                        name="supplierId"
+                                        value={form.supplierId}
+                                        onChange={handleChange}
+                                        className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm"
+                                    >
+                                        <option value="">------- chọn nhà cung cấp --------</option>
+                                        {suppliers.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="productStatus" text="Gán nhãn" />
+                                    {/* // sửa select Product Status */}
+                                    <select
+                                        id="productStatus"
+                                        name="productStatus"
+                                        value={form.productStatus}
+                                        onChange={handleChange}
+                                        className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
+                                    >
+                                        {(
+                                            [
+                                                "NEW",
+                                                "HOT",
+                                                "SALE",
+                                                "OUT_OF_STOCK",
+                                                "DISCONTINUED",
+                                                "USED",
+                                            ] as ProductStatus[]
+                                        ).map((s) => (
+                                            <option key={s} value={s}>
+                                                {productStatusLabels[s]}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <Label htmlFor="description" text="Product Description" />
@@ -317,29 +503,26 @@ const AddNewProduct: React.FC = () => {
                                 </h2>
                             </div>
                             <div className="grid grid-cols-3 gap-4 mb-4">
-                                {/* Retail Price */}
+                                {/* Tax VAT */}
                                 <div>
-                                    <Label htmlFor="price" text="Retail Price ($)" />
-                                    <div className="relative mt-2">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                                        <input
-                                            id="price"
-                                            name="price"
-                                            type="number"
-                                            min={0}
-                                            step={0.01}
-                                            value={form.price || ""}
-                                            onChange={handleNumberChange}
-                                            placeholder="0.00"
-                                            className="h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 pl-7 pr-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
-                                        />
-                                    </div>
+                                    <Label htmlFor="taxVat" text="Tax VAT (%)" />
+                                    <input
+                                        id="taxVat"
+                                        name="taxVat"
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        value={form.taxVat || ""}
+                                        onChange={handleNumberChange}
+                                        placeholder="0"
+                                        className=" h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
+                                    />
                                 </div>
                                 {/* Import Price */}
                                 <div>
-                                    <Label htmlFor="importPrice" text="Import Price ($)" />
+                                    <Label htmlFor="importPrice" text="giá nhập (vnd)" />
                                     <div className="relative mt-2">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></span>
                                         <input
                                             id="importPrice"
                                             name="importPrice"
@@ -353,60 +536,67 @@ const AddNewProduct: React.FC = () => {
                                         />
                                     </div>
                                 </div>
+                                {/* Retail Price */}
+                                <div>
+                                    <Label htmlFor="price" text="giá bán (vnd)" />
+                                    <div className="relative mt-2">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></span>
+                                        <input
+                                            id="price"
+                                            name="price"
+                                            type="number"
+                                            min={0}
+                                            step={0.01}
+                                            value={form.price || ""}
+                                            onChange={handleNumberChange}
+                                            placeholder="0.00"
+                                            className="h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 pl-7 pr-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
+                                        />
+
+                                    </div>
+                                </div>
+
+
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+
+                                {/* Product Status */}
                                 {/* Stock */}
-               {/* // sửa InputField quantity */}
+                                {/* // sửa InputField quantity */}
                                 <InputField
-                                    label="Stock Quantity"
-                                    id="quanlity"
-                                    name="quanlity"
+                                    label="Số lượng"
+                                    id="quantity"
+                                    name="quantity"
                                     type="number"
-                                    value={form.quanlity.toString()}
+                                    value={form.quantity?.toString() ?? ""}
                                     onChange={handleNumberChange}
                                     placeholder="0"
                                 />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Tax VAT */}
-                                <div>
-                                    <Label htmlFor="taxVat" text="Tax VAT (%)" />
-                                    <input
-                                        id="taxVat"
-                                        name="taxVat"
-                                        type="number"
-                                        min={0}
-                                        max={100}
-                                        value={form.taxVat || ""}
-                                        onChange={handleNumberChange}
-                                        placeholder="0"
-                                        className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
-                                    />
-                                </div>
-                                {/* Product Status */}
-                                <div>
-                                    <Label htmlFor="productStatus" text="Product Status" />
-                  {/* // sửa select Product Status */}
-                                    <select
-                                        id="productStatus"
-                                        name="productStatus"
-                                        value={form.productStatus}
-                                        onChange={handleChange}
-                                        className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
-                                    >
-                                        {(
-                                            [
-                                                "NEW",
-                                                "HOT",
-                                                "SALE",
-                                                "OUT_OF_STOCK",
-                                                "DISCONTINUED",
-                                                "USED",
-                                            ] as ProductStatus[]
-                                        ).map((s) => (
-                                            <option key={s} value={s}>
-                                                {productStatusLabels[s]}
-                                            </option>
-                                        ))}
-                                    </select>
+                         
+                                    {/* Profit per item */}
+                                    <div>
+                                        <Label htmlFor="profitPerItem" text="Lợi nhuận / 1 sản phẩm" />
+
+                                        <input
+                                            id="profitPerItem"
+                                            value={profitPerItem.toLocaleString()}
+                                            disabled
+                                            className="h-12 w-full rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/10 px-3 text-sm text-green-600 font-semibold cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    {/* Total profit */}
+                                    <div>
+                                        <Label htmlFor="totalProfit" text="Tổng lợi nhuận (bán hết)" />
+
+                                        <input
+                                            id="totalProfit"
+                                            value={totalProfit.toLocaleString()}
+                                            disabled
+                                            className="h-12 w-full rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-900/10 px-3 text-sm text-blue-600 font-semibold cursor-not-allowed"
+                                        />
+                                   
+
                                 </div>
                             </div>
                         </Card>
@@ -540,36 +730,6 @@ const AddNewProduct: React.FC = () => {
                             />
                         </Card>
 
-                        {/* Supplier & Brand IDs */}
-                        <Card extra="p-5">
-                            <div className="flex items-center gap-2 mb-4">
-                                <BuildingIcon />
-                                <h2 className="text-sm font-semibold text-gray-700 dark:text-white">
-                                    Supplier &amp; Brand
-                                </h2>
-                            </div>
-                            <InputField
-                                label="Brand ID"
-                                id="brandId"
-                                name="brandId"
-                                type="number"
-                                value={form.brandId.toString()}
-                                onChange={handleChange}
-                                placeholder="e.g. 1"
-                                extra="mb-3"
-                            />
-                            {/* // sửa Supplier ID */}
-                            <InputField
-                                label="Supplier ID"
-                                id="supplierId"
-                                name="supplierId"
-                                type="number"
-                                value={form.supplierId.toString()}
-                                onChange={handleNumberChange}
-                                placeholder="e.g. 1"
-                            />
-                        </Card>
-
                         {/* Visibility */}
                         <Card extra="p-5">
                             <div className="flex items-center gap-2 mb-4">
@@ -592,35 +752,6 @@ const AddNewProduct: React.FC = () => {
                                 />
                             </div>
 
-                            <Label htmlFor="tags" text="Tags" />
-                            <div
-                                className="flex flex-wrap gap-2 border border-gray-200 dark:border-white/10 rounded-xl p-2 min-h-[44px] cursor-text"
-                                onClick={() => document.getElementById("tagInput")?.focus()}
-                            >
-                                {tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="flex items-center gap-1 bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full"
-                                    >
-                                        {tag}
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                                            className="hover:text-red-800 transition"
-                                        >
-                                            ×
-                                        </button>
-                                    </span>
-                                ))}
-                                <input
-                                    id="tagInput"
-                                    type="text"
-                                    value={tagInput}
-                                    onChange={(e) => setTagInput(e.target.value)}
-                                    onKeyDown={handleTagKeyDown}
-                                    placeholder={tags.length === 0 ? "Add tags (press Enter)" : ""}
-                                    className="flex-1 min-w-[80px] bg-transparent text-sm text-gray-700 dark:text-white outline-none placeholder:text-gray-300"
-                                />
-                            </div>
                         </Card>
 
                         {/* Help */}

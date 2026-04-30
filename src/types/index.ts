@@ -79,7 +79,6 @@ export interface ProductResponse {
   description: string;
   specification: Record<string, string | Record<string, string>>; // Support both flat strings and nested objects
   listImage: string[];                   // List<String>
-
   discountPercent: number;
   discountValue: number;
   discountType: string; // hoặc enum
@@ -90,7 +89,51 @@ export interface ProductResponse {
   supplierName: string;
   categoryName: string;
 }
+// tạo 1 sản phẩm mới
+export interface ProductCreateRequest {
+  modelName?: string;
+  modelNumber?: string;
 
+  specification?: string; // JSON string
+  description?: string;
+
+  importPrice?: number;
+  taxVat?: number;
+  price?: number;
+
+  quantity?: number;
+  productStatus?: string;
+
+  brandId?: number;
+  supplierId?: number;
+  categoryId?: number;
+
+  thumbnail?: File;
+  listImage?: File[];
+}
+// update sản phẩm
+export interface ProductUpdateRequest {
+  modelName?: string;
+  modelNumber?: string;
+  description?: string;
+
+  price?: number;
+  quantity?: number;
+  importPrice?: number;
+
+  productStatus?: string;
+
+  specification?: Record<string, string>;
+
+  newImages?: File[];
+  deletedImages?: string[];
+  keptImages?: string[];
+  thumbnail?: File;
+
+  brandId?: number;
+  supplierId?: number;
+  categoryId?: number;
+}
 // giỏ hàng item
 export interface CartItem {
   basePrice: number;
@@ -172,28 +215,7 @@ export interface Account {
   createAt: string;
   lastActivity: string;
 }
-// tạo 1 product mới
-export interface ProductCreateRequest {
-  modelName: string;
-  specification: string; // JSON string
-  thumbnail: string;
-  description: string;
 
-  importPrice: number;
-  taxVat: number;
-  price: number;
-
-  modelNumber: string;
-  listImage: string; // JSON string
-
-  quanlity: number;
-
-  productStatus: ProductStatus;
-
-  brandId: number;
-  supplierId: number;
-  categoryId: number;
-}
 // Product status label hiển thị tiếng Việt
 export const productStatusLabels: Record<ProductStatus, string> = {
   NEW: "Sản phẩm mới",
