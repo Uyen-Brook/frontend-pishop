@@ -1,52 +1,80 @@
 import { apiClient } from "../api";
 import { API_BASE_URL } from "../../config/env";
-import { AccountRank, UserRole } from "../../types";
-export enum AccountRole {
-  ADMIN = "ADMIN",
-  USER = "USER",
-}
-
-export interface Account {
-  id: number;
-  fullName: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  role: AccountRole;
-  locked: boolean;
-  enabled: boolean;
-  createdAt?: string;
-}
-
-export interface PageableResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
-
-export interface APIResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+import { UserRole, Account } from "../../types";
 
 export const AdminAccountService = {
   /**
-   * Reset mật khẩu tài khoản
+   * Tạo mới tài khoản
+   */
+  async createAccount(account: Partial<Account>): Promise<Account> {
+    const response = await apiClient.post(
+      `${API_BASE_URL}/admin/accounts`,
+      account
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Lấy chi tiết tài khoản theo id
+   */
+  async getAccountById(id: number): Promise<Account> {
+    const response = await apiClient.get(
+      `${API_BASE_URL}/admin/accounts/${id}`
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Cập nhật tài khoản
+   */
+  async updateAccount(
+    id: number,
+    account: Partial<Account>
+  ): Promise<Account> {
+    const response = await apiClient.put(
+      `${API_BASE_URL}/admin/accounts/${id}`,
+      account
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Xóa tài khoản
+   */
+  async deleteAccount(id: number): Promise<string> {
+    const response = await apiClient.delete(
+      `${API_BASE_URL}/admin/accounts/${id}`
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Lấy toàn bộ danh sách tài khoản
+   */
+  async getAllAccounts(): Promise<Account[]> {
+    const response = await apiClient.get(
+      `${API_BASE_URL}/admin/accounts`
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Reset mật khẩu
    */
   async resetPassword(
     id: number,
     newPassword: string
-  ): Promise<APIResponse<string>> {
+  ): Promise<string> {
     const response = await apiClient.post(
       `${API_BASE_URL}/admin/accounts/${id}/reset-password`,
       {},
       {
-        params: {
-          newPassword,
-        },
+        params: { newPassword },
       }
     );
 
@@ -56,7 +84,7 @@ export const AdminAccountService = {
   /**
    * Khóa tài khoản
    */
-  async lockAccount(id: number): Promise<APIResponse<string>> {
+  async lockAccount(id: number): Promise<string> {
     const response = await apiClient.post(
       `${API_BASE_URL}/admin/accounts/${id}/lock`,
       {}
@@ -68,7 +96,7 @@ export const AdminAccountService = {
   /**
    * Mở khóa tài khoản
    */
-  async unlockAccount(id: number): Promise<APIResponse<string>> {
+  async unlockAccount(id: number): Promise<string> {
     const response = await apiClient.post(
       `${API_BASE_URL}/admin/accounts/${id}/unlock`,
       {}
@@ -78,21 +106,13 @@ export const AdminAccountService = {
   },
 
   /**
-   * Tìm kiếm tài khoản có phân trang
+   * Search account
    */
-  async searchAccounts(
-    q: string = "",
-    page: number = 0,
-    size: number = 10
-  ): Promise<APIResponse<PageableResponse<Account>>> {
+  async searchAccounts(q: string = ""): Promise<Account[]> {
     const response = await apiClient.get(
       `${API_BASE_URL}/admin/accounts/search`,
       {
-        params: {
-          q,
-          page,
-          size,
-        },
+        params: { q },
       }
     );
 
@@ -100,17 +120,13 @@ export const AdminAccountService = {
   },
 
   /**
-   * Lấy danh sách account theo role
+   * Lọc theo role
    */
-  async getAccountsByRole(
-    role: AccountRole
-  ): Promise<APIResponse<Account[]>> {
+  async getAccountsByRole(role: UserRole): Promise<Account[]> {
     const response = await apiClient.get(
       `${API_BASE_URL}/admin/accounts/by-role`,
       {
-        params: {
-          role,
-        },
+        params: { role },
       }
     );
 

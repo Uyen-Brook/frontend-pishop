@@ -1,5 +1,6 @@
+// user
 export type UserRole = "USER" | "ADMIN";
-
+// token
 export interface DecodedToken {
   accountId: number;
   role: UserRole;
@@ -42,11 +43,11 @@ export interface Brand{
   website: string;
 }
 
-
 // discount type
 export type DiscountType= "PERCENT" | "FIXED_AMOUNT" | null;
+
 // product type
-export interface Product {
+export interface ProductSumaryResponse {
   id: number;
   modelName: string;
   modelNumber: string;
@@ -61,7 +62,9 @@ export interface Product {
   supplierName: string;
   thumbnail: string;
 }
-export interface ProductDetail {
+
+//  chi tiết 
+export interface ProductResponse {
   id: number;
   modelName: string;
   modelNumber: string;
@@ -88,7 +91,7 @@ export interface ProductDetail {
   categoryName: string;
 }
 
-// giỏ hàng
+// giỏ hàng item
 export interface CartItem {
   basePrice: number;
   discountType: 'PERCENT' | 'FIXED_AMOUNT';
@@ -105,14 +108,14 @@ export interface CartItem {
   thumbnail: string;
   selected: boolean;
 }
-
+// giỏ hàng
 export interface Cart {
   cartId: number;
   items: CartItem[];
   totalPrice: number;
 }
 
-
+// productStatus
 export type ProductStatus =
   | "NEW"
   | "HOT"
@@ -130,6 +133,7 @@ export type OrderStatus =
   | "DELIVERED"
   | "CANCELLED";
 
+// Order status
 export const OrderStatusLabel: Record<OrderStatus, string> = {
   PENDDING: "Chờ thanh toán",
   PAID: "Đã thanh toán",
@@ -138,7 +142,7 @@ export const OrderStatusLabel: Record<OrderStatus, string> = {
   DELIVERED: "Đã giao hàng",
   CANCELLED: "Đã hủy",
 };
-
+// payment method
 export type PaymentMethod =
   | "COD"
   | "BANK_TRANSFER"
@@ -152,3 +156,87 @@ export type TransactionStatus =
   | "SUCCESS"
   | "FAILED"
   | "PENDING";
+
+export interface Account {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  isActive: boolean;
+  isDelete: boolean;
+  image: string;
+  role: UserRole;
+  point: number;
+  rank: string;
+  createAt: string;
+  lastActivity: string;
+}
+// tạo 1 product mới
+export interface ProductCreateRequest {
+  modelName: string;
+  specification: string; // JSON string
+  thumbnail: string;
+  description: string;
+
+  importPrice: number;
+  taxVat: number;
+  price: number;
+
+  modelNumber: string;
+  listImage: string; // JSON string
+
+  quanlity: number;
+
+  productStatus: ProductStatus;
+
+  brandId: number;
+  supplierId: number;
+  categoryId: number;
+}
+// Product status label hiển thị tiếng Việt
+export const productStatusLabels: Record<ProductStatus, string> = {
+  NEW: "Sản phẩm mới",
+  HOT: "Bán chạy",
+  SALE: "Đang giảm giá",
+  OUT_OF_STOCK: "Hết hàng",
+  DISCONTINUED: "Ngừng bán",
+  USED: "Hàng cũ",
+};
+// mapp string string
+export interface SpecEntry {
+  key: string;
+  value: string;
+}
+
+// nhà cung cấp
+export interface SupplierRequest {
+  name?: string;
+  taxcode?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  note?: string;
+  website?: string;
+}
+// nhàcung cấp 
+export interface SupplierResponse {
+  id: number;
+  name: string;
+  logo?: string;
+  taxcode?: string;
+  phone?: string;
+  address?: string;
+}
+// nhà cung cấp
+export interface SupplierDetailResponse {
+  id: number;
+  name: string;
+  taxcode?: string;
+  email?: string;
+  phone?: string;
+  logo?: string;
+  address?: string;
+  note?: string;
+  website?: string;
+}

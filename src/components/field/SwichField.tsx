@@ -1,10 +1,11 @@
-// SwitchField.tsx
 import React from "react";
 import Switch from "./Switch";
 
 type SwitchFieldProps = {
   id: string;
   label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
   desc?: string;
   mt?: string;
   mb?: string;
@@ -13,6 +14,8 @@ type SwitchFieldProps = {
 const SwitchField: React.FC<SwitchFieldProps> = ({
   id,
   label,
+  checked,
+  onChange,
   desc = "",
   mt = "",
   mb = "",
@@ -26,10 +29,20 @@ const SwitchField: React.FC<SwitchFieldProps> = ({
         <h5 className="text-base font-bold text-navy-700 dark:text-white">
           {label}
         </h5>
-        {desc && <p className="text-base text-gray-600">{desc}</p>}
+
+        {desc && (
+          <p className="text-base text-gray-600">
+            {desc}
+          </p>
+        )}
       </label>
+
       <div>
-        <Switch id={id} />
+        <Switch
+          id={id}
+          checked={checked}
+          onChange={onChange}
+        />
       </div>
     </div>
   );

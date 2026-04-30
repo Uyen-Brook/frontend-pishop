@@ -7,6 +7,7 @@ import type { ProductDetail } from "../../../types/index";
 import ProductDetailComponent from "../../../components/product/ProductDetailComponent";
 import "./ProductDetail.css";
 import { FaArrowLeft, FaShoppingCart, FaHeart, FaStar } from "react-icons/fa";
+import AddNewProduct from "../../../components/layout/admin/product/AddProductForm";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -488,6 +489,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+      
     </div>
   );
 }

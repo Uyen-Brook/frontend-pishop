@@ -6,7 +6,7 @@ import { categoryService } from "../../../service/custommer/categoryService";
 import { productService } from "../../../service/custommer/productService";
 import { brandService } from "../../../service/custommer/brandService";
 
-import type { Category, Product, Brand } from "../../../types/index";
+import type { Category, ProductSumaryResponse, Brand } from "../../../types/index";
 import SideBarV2 from "../../../components/menu/menuCategory/SideBarV2";
 import BrandBar from "../../../components/menu/BrandBar";
 import "./homePage.css";
@@ -14,7 +14,7 @@ import "./homePage.css";
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductSumaryResponse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -52,7 +52,7 @@ export default function HomePage() {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        let productsData: Product[];
+        let productsData: ProductSumaryResponse[];
 
         if (selectedCategory && selectedBrand) {
           // Lọc theo cả category và brand

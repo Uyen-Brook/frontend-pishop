@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
+import { useEffect } from "react";
 import Card from "../../../components/card/Card";
 import Widget from "../../../components/widget/Widget";
 import SearchInput from "../../../components/search/SearchInput";
 import Select from "../../../components/select/Select";
 import StatsCard from "../../../components/card/StatsCard";
+import AddNewProduct from "../../../components/layout/admin/product/AddProductForm";
+import { ProductService } from "../../../service/admin/ProductService";
 import {
   Package,
   ShoppingCart,
@@ -17,6 +19,8 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { Product, Category, Brand, SupplierResponse } from "../../../types/index";
+import { productService } from "../../../service/custommer/productService";
 
 // ======================================
 // MOCK DATA
@@ -84,6 +88,7 @@ const statusOptions = [
 // ======================================
 
 export default function AdminProductsPage() {
+
   // ======================================
   // STATES
   // ======================================
@@ -124,6 +129,25 @@ export default function AdminProductsPage() {
 
   const revenue = "$45,780";
 
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+
+      const res = await ProductService.getAll(0, 10);
+      setProducts(res.content); // ✅ lấy content
+
+    } catch (error) {
+      alert("Có lỗi xảy ra, không thể kết nối API");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ======================================
   // RENDER
   // ======================================
@@ -156,38 +180,38 @@ export default function AdminProductsPage() {
       {/* ====================================== */}
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-  <StatsCard
-  icon={Package}
-  title="Total Products"
-  value="1,234"
-  growth="+12.5%"
-  trend="up"
-/>
+        <StatsCard
+          icon={Package}
+          title="Total Products"
+          value="1,234"
+          growth="+12.5%"
+          trend="up"
+        />
 
-<StatsCard
-  icon={AlertTriangle}
-  title="Low Stock"
-  value="12"
-  growth="-3.1%"
-  trend="down"
-/>
+        <StatsCard
+          icon={AlertTriangle}
+          title="Low Stock"
+          value="12"
+          growth="-3.1%"
+          trend="down"
+        />
 
-<StatsCard
-  icon={Users}
-  title="Visitors"
-  value="890"
-  growth="0%"
-  trend="neutral"
-/>
+        <StatsCard
+          icon={Users}
+          title="Visitors"
+          value="890"
+          growth="0%"
+          trend="neutral"
+        />
 
-  <StatsCard
-    icon={DollarSign}
-    title="Revenue"
-    value={revenue}
-    growth="+24.3%"
-    color="bg-purple-100 text-purple-600"
-  />
-</div>
+        <StatsCard
+          icon={DollarSign}
+          title="Revenue"
+          value={revenue}
+          growth="+24.3%"
+          color="bg-purple-100 text-purple-600"
+        />
+      </div>
 
       {/* ====================================== */}
       {/* FILTERS */}
@@ -233,7 +257,7 @@ export default function AdminProductsPage() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Products List
               </h2>
-
+              <AddNewProduct />
               <p className="mt-1 text-sm text-gray-500">
                 Showing {filteredProducts.length} products
               </p>
@@ -310,11 +334,10 @@ export default function AdminProductsPage() {
                   {/* STOCK */}
                   <td className="px-6 py-5">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        product.stock < 20
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${product.stock < 20
                           ? "bg-red-100 text-red-600"
                           : "bg-green-100 text-green-600"
-                      }`}
+                        }`}
                     >
                       {product.stock} items
                     </span>
@@ -323,13 +346,12 @@ export default function AdminProductsPage() {
                   {/* STATUS */}
                   <td className="px-6 py-5">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        product.status === "Active"
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${product.status === "Active"
                           ? "bg-green-100 text-green-700"
                           : product.status === "Inactive"
-                          ? "bg-gray-200 text-gray-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {product.status}
                     </span>

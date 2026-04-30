@@ -1,10 +1,13 @@
-
 // AccountPage.tsx
 import React, { useMemo, useState } from "react";
 import Card from "../../../components/card/Card";
 import Label from "../../../components/field/LabelField";
 import Select from "../../../components/select/Select";
 import Switch from "../../../components/field/Switch";
+import { AdminAccountService } from "../../../service/admin/AccountService";
+import { useEffect } from "react";
+import { UserRole, Account } from "../../../types";
+
 import {
   MdAdd,
   MdDelete,
@@ -14,61 +17,9 @@ import {
   MdShield,
 } from "react-icons/md";
 
-export type AccountRole = "ADMIN" | "USER";
-
-interface Account {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  isActive: boolean;
-  isDelete: boolean;
-  image: string;
-  role: AccountRole;
-  point: number;
-  rank: string;
-  createAt: string;
-  lastActivity: string;
-}
-
-const mockAccounts: Account[] = [
-  {
-    id: 1,
-    firstName: "Admin",
-    lastName: "System",
-    email: "admin@gmail.com",
-    password: "123456",
-    isActive: true,
-    isDelete: false,
-    image: "https://i.pravatar.cc/150?img=1",
-    role: "ADMIN",
-    point: 1000,
-    rank: "VIP",
-    createAt: "2026-04-20",
-    lastActivity: "2026-04-28",
-  },
-  {
-    id: 2,
-    firstName: "Nguyen",
-    lastName: "Van A",
-    email: "user@gmail.com",
-    password: "123456",
-    isActive: true,
-    isDelete: false,
-    image: "https://i.pravatar.cc/150?img=2",
-    role: "USER",
-    point: 250,
-    rank: "SILVER",
-    createAt: "2026-04-22",
-    lastActivity: "2026-04-27",
-  },
-];
-
 const AccountPage: React.FC = () => {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
 
-  const [activeTab, setActiveTab] = useState<AccountRole>("ADMIN");
+  const [activeTab, setActiveTab] = useState<UserRole>("ADMIN");
 
   const [search, setSearch] = useState("");
 
@@ -79,6 +30,7 @@ const AccountPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
 
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -86,10 +38,28 @@ const AccountPage: React.FC = () => {
     email: "",
     password: "",
     image: "",
-    role: "USER" as AccountRole,
+    role: "USER" as UserRole,
     isActive: true,
     point: 0,
   });
+
+// lấy danh sách tài khoản
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+  
+const loadAccounts = async () => {
+  try {
+    const data = await AdminAccountService.getAllAccounts();
+    setAccounts(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+  const handleOpenAdd = () => {
+    resetForm();
+    setOpenModal(true);
+  };
 
   const filteredAccounts = useMemo(() => {
     const filtered = accounts
@@ -116,17 +86,15 @@ const AccountPage: React.FC = () => {
 
       return sortOrder === "asc"
         ? new Date(a.createAt).getTime() -
-            new Date(b.createAt).getTime()
+        new Date(b.createAt).getTime()
         : new Date(b.createAt).getTime() -
-            new Date(a.createAt).getTime();
+        new Date(a.createAt).getTime();
     });
 
     return filtered;
   }, [accounts, activeTab, search, sortField, sortOrder]);
-
   const resetForm = () => {
     setEditingAccount(null);
-
     setFormData({
       firstName: "",
       lastName: "",
@@ -139,10 +107,6 @@ const AccountPage: React.FC = () => {
     });
   };
 
-  const handleOpenAdd = () => {
-    resetForm();
-    setOpenModal(true);
-  };
 
   const handleEdit = (account: Account) => {
     setEditingAccount(account);
@@ -160,7 +124,7 @@ const AccountPage: React.FC = () => {
 
     setOpenModal(true);
   };
-
+  //  cột rank đã xong
   const calculateRank = (point: number) => {
     if (point === 0) return "NEW";
     if (point < 200) return "BRONZE";
@@ -171,86 +135,92 @@ const AccountPage: React.FC = () => {
     return "VIP";
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+  try {
     if (!formData.email || !formData.firstName) {
       alert("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
     if (editingAccount) {
-      setAccounts((prev) =>
-        prev.map((item) =>
-          item.id === editingAccount.id
-            ? {
-                ...item,
-                ...formData,
-                rank: calculateRank(formData.point),
-              }
-            : item
-        )
+      await AdminAccountService.updateAccount(
+        editingAccount.id,
+        formData
       );
     } else {
-      const newAccount: Account = {
-        id: Date.now(),
-        ...formData,
-        rank: calculateRank(formData.point),
-        isDelete: false,
-        createAt: new Date().toISOString(),
-        lastActivity: new Date().toISOString(),
-      };
-
-      setAccounts((prev) => [...prev, newAccount]);
+      await AdminAccountService.createAccount(formData);
     }
 
+    await loadAccounts();
+
     setOpenModal(false);
+
     resetForm();
-  };
+  } catch (error) {
+    console.error(error);
+  }
+};
 
-  const handleDelete = (id: number) => {
-    const confirmDelete = window.confirm(
-      "Bạn có chắc muốn xóa tài khoản này không?"
-    );
+  const handleDelete = async (id: number) => {
+  const confirmDelete = window.confirm(
+    "Bạn có chắc muốn xóa tài khoản này không?"
+  );
 
-    if (!confirmDelete) return;
+  if (!confirmDelete) return;
 
-    setAccounts((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              isDelete: true,
+  try {
+    await AdminAccountService.deleteAccount(id);
+
+    await loadAccounts();
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+  // đã xong call api lock
+  const handleToggleLock = async (id: number, checked: boolean) => {
+    try {
+      // checked = true => ACTIVE
+      // checked = false => INACTIVE
+      if (checked) {
+        await AdminAccountService.unlockAccount(id);
+
+      } else {
+        await AdminAccountService.lockAccount(id);
+      }
+      setAccounts((prev) =>
+        prev.map((acc) =>
+          acc.id === id
+            ? {
+              ...acc,
+              isActive: checked, // FIX: dùng isActive, không dùng locked
             }
-          : item
-      )
-    );
+            : acc
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="pb-3 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-navy-700 dark:text-white">
             Quản lý tài khoản
           </h2>
         </div>
-
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-3 font-semibold text-white transition hover:opacity-90"
-        >
-          <MdAdd className="text-xl" />
-          Thêm Account
-        </button>
       </div>
 
-      <div className="mb-6 flex gap-4">
+      <div className="pb-3 flex gap-4">
         <button
           onClick={() => setActiveTab("ADMIN")}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 font-semibold transition ${
-            activeTab === "ADMIN"
-              ? "bg-brand-500 text-white"
-              : "bg-white text-gray-700 dark:bg-navy-800 dark:text-white"
-          }`}
+          className={`flex items-center px-3 text-xs font-semibold transition ${activeTab === "ADMIN"
+            ? "bg-red-500 text-white"
+            : "bg-white text-gray-700 dark:bg-navy-800 dark:text-white"
+            }`}
         >
           <MdShield className="text-lg" />
           Admin Accounts
@@ -258,14 +228,21 @@ const AccountPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab("USER")}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 font-semibold transition ${
-            activeTab === "USER"
-              ? "bg-brand-500 text-white"
-              : "bg-white text-gray-700 dark:bg-navy-800 dark:text-white"
-          }`}
+          className={`flex items-center px-3 text-xs font-semibold transition ${activeTab === "USER"
+            ? "bg-red-500 text-white"
+            : "bg-white text-gray-700 dark:bg-navy-800 dark:text-white"
+            }`}
         >
-          <MdPerson className="text-lg" />
+          <MdPerson className="text-sm" />
           User Accounts
+        </button>
+
+        <button
+          onClick={handleOpenAdd}
+          className="flex items-center text-xs gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white transition hover:opacity-90"
+        >
+          <MdAdd className="text-lg" />
+          Thêm tài khoản
         </button>
       </div>
 
@@ -318,53 +295,64 @@ const AccountPage: React.FC = () => {
           />
         </div>
       </Card>
-
+      {/* // BẢNG DỮ LIỆU */}
       <Card extra="overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-navy-900">
               <tr>
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
-                  User
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  ID
+                </th>
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  avatar
+                </th>
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Name
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Email
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Role
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Point
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Rank
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Status
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                {/* <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Create At
-                </th>
+                </th> */}
 
-                <th className="px-5 py-4 text-center text-sm font-bold text-gray-600 dark:text-gray-300">
+                <th className="px-3 py-4 text-center text-sm font-bold text-gray-600 dark:text-gray-300">
                   Actions
                 </th>
               </tr>
             </thead>
-
+                {/* DỮ LIỆU  QUA HÀM FILTER CUSTOMMER VÀ ADMIN */}
             <tbody>
               {filteredAccounts.map((account) => (
                 <tr
                   key={account.id}
                   className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/5"
                 >
-                  <td className="px-5 py-4">
+                  <td className="px-3 py-4">
+                    <p className="text-sm text-gray-500">
+                      ID: #{account.id}
+                    </p>
+                  </td>
+                  <td className="px-3 py-4">
                     <div className="flex items-center gap-3">
                       <img
                         src={account.image}
@@ -372,59 +360,54 @@ const AccountPage: React.FC = () => {
                         className="h-12 w-12 rounded-full object-cover"
                       />
 
-                      <div>
-                        <p className="font-bold text-navy-700 dark:text-white">
-                          {account.firstName} {account.lastName}
-                        </p>
 
-                        <p className="text-sm text-gray-500">
-                          ID: #{account.id}
-                        </p>
-                      </div>
                     </div>
                   </td>
+                  <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {account.firstName}
+                  </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {account.email}
                   </td>
 
-                  <td className="px-5 py-4">
+                  <td className="px-3 py-4">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        account.role === "ADMIN"
-                          ? "bg-red-100 text-red-600"
-                          : "bg-blue-100 text-blue-600"
-                      }`}
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${account.role === "ADMIN"
+                        ? "bg-red-100 text-red-600"
+                        : "bg-blue-100 text-blue-600"
+                        }`}
                     >
                       {account.role}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-sm font-semibold text-navy-700 dark:text-white">
+                  <td className="px-3 py-4 text-sm font-semibold text-navy-700 dark:text-white">
                     {account.point}
                   </td>
 
-                  <td className="px-5 py-4">
+                  <td className="px-3 py-4">
                     <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-600">
                       {account.rank}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4">
+                  <td className="px-3 py-4">
                     <div className="flex items-center gap-2">
-                      <Switch checked={account.isActive} readOnly />
+                      <Switch
+                        checked={account.isActive}
+                        onChange={(checked) =>
+                          handleToggleLock(account.id, checked)
+                        }
+                      />
+                      {/* <Switch checked={account.isActive} readOnly /> */}
 
                       <span className="text-sm text-gray-600 dark:text-gray-300">
                         {account.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
                   </td>
-
-                  <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {new Date(account.createAt).toLocaleDateString()}
-                  </td>
-
-                  <td className="px-5 py-4">
+                  <td className="px-3 py-4">
                     <div className="flex items-center justify-center gap-3">
                       <button
                         onClick={() => handleEdit(account)}
@@ -445,6 +428,8 @@ const AccountPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div>
         </div>
       </Card>
 
@@ -581,10 +566,10 @@ const AccountPage: React.FC = () => {
 
               <Switch
                 checked={formData.isActive}
-                onChange={(e) =>
+                onChange={(checked) =>
                   setFormData({
                     ...formData,
-                    isActive: e.target.checked,
+                    isActive: checked,
                   })
                 }
               />
@@ -593,14 +578,14 @@ const AccountPage: React.FC = () => {
             <div className="mt-8 flex justify-end gap-3">
               <button
                 onClick={() => setOpenModal(false)}
-                className="rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10"
+                className="rounded-xl border border-gray-300 px-3 py-3 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSave}
-                className="rounded-xl bg-brand-500 px-5 py-3 font-semibold text-white transition hover:opacity-90"
+                className="rounded-xl bg-brand-500 px-3 py-3 font-semibold text-white transition hover:opacity-90"
               >
                 {editingAccount ? "Update" : "Create"}
               </button>
