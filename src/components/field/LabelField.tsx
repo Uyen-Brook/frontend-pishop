@@ -2,8 +2,8 @@
 import React from "react";
 
 type LabelProps = {
-  htmlFor: string;          // id của input/textarea mà label liên kết
-  text: string;             // nội dung hiển thị
+  htmlFor?: string;          // id của input/textarea mà label liên kết
+  text?: string;             // nội dung hiển thị
   className?: string;       // thêm class tùy chỉnh
   required?: boolean;       // hiển thị dấu * nếu bắt buộc
 };

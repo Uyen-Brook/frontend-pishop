@@ -2,9 +2,9 @@ import { useMemo, useState, useEffect } from "react";
 import Card from "../../../components/card/Card";
 import InputField from "../../../components/field/InputField";
 import Select from "../../../components/select/Select";
-import { OrderService, OrderResponse } from "../../../service/admin/OrderService";
+import { OrderService, OrderResponse, OrderSearchParams } from "../../../service/admin/OrderService";
 import {
-  OrderStatus, OrderStatusLabel, PaymentMethod, PaymentMethodLabel,
+  OrderStatus, OrderStatusLabel, PageResponse, PaymentMethod, PaymentMethodLabel,
   PayStatus,
   PayStatusLabel,
 } from "../../../types/index";
@@ -51,16 +51,18 @@ const orderStatusConfig: Record<OrderStatus, { color: string; bg: string; icon: 
 /* ================= PAGE ================= */
 export default function OrderPage() {
   // Data states
-  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [pageData, setPageData] = useState<PageResponse<OrderResponse> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Filter states
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Date filters (tạm thời chưa dùng vì backend chưa hỗ trợ)
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -71,45 +73,45 @@ export default function OrderPage() {
   const [updateStatus, setUpdateStatus] = useState<OrderStatus | "">("");
   const [cancelReason, setCancelReason] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // Load orders on mount
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  // API calls
-  const loadOrders = async () => {
+  
+  // Load orders
+  const loadOrders = async (currentPage: number = 0) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await OrderService.getAll();
-      setOrders(data || []);
+
+      const params: OrderSearchParams = {
+        keyword: search.trim() || undefined,
+        status: status === "ALL" ? undefined : status,
+        page: currentPage,
+        size: size,
+        sort: "createdAt,desc"
+      };
+
+      const data = await OrderService.search(params);
+      setPageData(data);
     } catch (err) {
       console.error("Failed to load orders:", err);
       setError("Không thể tải danh sách đơn hàng");
+      setPageData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        keyword: search || undefined,
-        status: status === "ALL" ? undefined : status,
-      };
-      const data = await OrderService.search(params);
-      setOrders(data || []);
-      setPage(0);
-    } catch (err) {
-      console.error("Search failed:", err);
-      setError("Tìm kiếm thất bại");
-    } finally {
-      setLoading(false);
-    }
+  // Load khi component mount và khi filter/page thay đổi
+  useEffect(() => {
+    loadOrders(page);
+  }, [page, size, search, status]);
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setSearch("");
+    setStatus("ALL");
+    setPage(0);
   };
 
+  // Update status
   const handleUpdateStatus = async () => {
     if (!selected || !updateStatus) return;
 
@@ -117,10 +119,8 @@ export default function OrderPage() {
       setIsUpdating(true);
       await OrderService.changeStatus(selected.id, updateStatus);
 
-      // Update local state
-      setOrders(prev => prev.map(o =>
-        o.id === selected.id ? { ...o, orderStatus: updateStatus } : o
-      ));
+      // Cập nhật lại dữ liệu từ server để đồng bộ
+      loadOrders(page);
 
       setSelected(prev => prev ? { ...prev, orderStatus: updateStatus } : null);
       setUpdateStatus("");
@@ -133,9 +133,9 @@ export default function OrderPage() {
     }
   };
 
+  // Cancel order
   const handleCancelOrder = async () => {
     if (!selected) return;
-
     if (!cancelReason.trim()) {
       alert("Vui lòng nhập lý do hủy đơn");
       return;
@@ -145,10 +145,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       await OrderService.cancel(selected.id);
 
-      // Update local state
-      // setOrders(prev => prev.map(o => 
-      //   o.id === selected.id ? { ...o, orderStatus: OrderStatusLabel } : o
-      // ));
+      loadOrders(page); // reload lại danh sách
 
       setSelected(prev => prev ? { ...prev, orderStatus: "CANCELLED" } : null);
       setCancelReason("");
@@ -161,12 +158,13 @@ export default function OrderPage() {
     }
   };
 
+  // Delete order
   const handleDeleteOrder = async (id: number) => {
     if (!confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
 
     try {
       await OrderService.delete(id);
-      setOrders(prev => prev.filter(o => o.id !== id));
+      loadOrders(page); // reload sau khi xóa
       alert("Xóa đơn hàng thành công!");
     } catch (err) {
       console.error("Delete failed:", err);
@@ -174,43 +172,10 @@ export default function OrderPage() {
     }
   };
 
-  const handleResetFilters = () => {
-    setSearch("");
-    setStatus("ALL");
-    setFromDate("");
-    setToDate("");
-    loadOrders();
-  };
-
-  /* FILTER */
-  const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
-      const matchSearch =
-        !search ||
-        (o.toName?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-        (o.toPhone?.includes(search) ?? false) ||
-        String(o.id).includes(search);
-
-      const matchStatus =
-        status === "ALL" ? true : o.orderStatus === status;
-
-      const matchDate =
-        (!fromDate || (o.createAt && new Date(o.createAt) >= new Date(fromDate))) &&
-        (!toDate || (o.createAt && new Date(o.createAt) <= new Date(toDate)));
-
-      return matchSearch && matchStatus && matchDate;
-    });
-  }, [orders, search, status, fromDate, toDate]);
-
-  // Pagination
-  const paginatedOrders = useMemo(() => {
-    const start = page * size;
-    return filteredOrders.slice(start, start + size);
-  }, [filteredOrders, page, size]);
-
-  const totalPages = Math.ceil(filteredOrders.length / size);
-
-
+  // Derived values
+  const orders = pageData?.content || [];
+  const totalPages = pageData?.totalPages || 0;
+  const totalElements = pageData?.totalElements || 0;
 
   const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return "0 ₫";
@@ -232,11 +197,11 @@ export default function OrderPage() {
             Quản lý đơn hàng
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Tổng số: <span className="font-semibold">{filteredOrders.length}</span> đơn hàng
+            Tổng số: <span className="font-semibold">{totalElements}</span> đơn hàng
           </p>
         </div>
         <button
-          onClick={loadOrders}
+          onClick={() => loadOrders(page)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -254,7 +219,6 @@ export default function OrderPage() {
               placeholder="ID, tên khách, SĐT..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              extra=""
             />
           </div>
 
@@ -267,7 +231,7 @@ export default function OrderPage() {
           </button>
 
           <button
-            onClick={handleSearch}
+            onClick={() => setPage(0)}   // Reset về trang 1 khi tìm kiếm
             className="flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
           >
             <Search className="w-4 h-4" />
@@ -284,22 +248,17 @@ export default function OrderPage() {
 
         {/* ADVANCED FILTERS */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-gray-50 rounded-xl">
-
-
-
-            <div className="flex flex-col gap-2 rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
+            <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-navy-700 dark:text-white">
                 Trạng thái đơn hàng
               </label>
-
               <Select
                 value={status}
                 onChange={(v) => setStatus(v as OrderStatus | "ALL")}
                 placeholder="-- Trạng thái --"
                 options={[
                   { value: "ALL", label: "Tất cả trạng thái" },
-
                   ...Object.entries(OrderStatusLabel).map(([key, label]) => ({
                     value: key,
                     label,
@@ -308,16 +267,12 @@ export default function OrderPage() {
               />
             </div>
 
-
-
-
             <InputField
               id="from"
               label="Từ ngày"
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              extra=""
             />
 
             <InputField
@@ -326,50 +281,45 @@ export default function OrderPage() {
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              extra=""
             />
           </div>
         )}
 
-        {/* ERROR MESSAGE */}
+        {/* ERROR */}
         {error && (
-          <div className="p-4 bg-red-50 text-red-600 rounded-xl">
-            {error}
-          </div>
+          <div className="p-4 bg-red-50 text-red-600 rounded-xl">{error}</div>
         )}
 
-        {/* LOADING */}
+        {/* LOADING & TABLE */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
         ) : (
           <>
-            {/* TABLE */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 dark:bg-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Mã đơn</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Khách hàng</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Liên hệ</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Tổng tiền</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Thanh toán</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Trạng thái</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Ngày tạo</th>
-                    <th className="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Thao tác</th>
+                    <th className="px-4 py-3 text-left">Mã đơn</th>
+                    <th className="px-4 py-3 text-left">Khách hàng</th>
+                    <th className="px-4 py-3 text-left">Liên hệ</th>
+                    <th className="px-4 py-3 text-left">Tổng tiền</th>
+                    <th className="px-4 py-3 text-left">Thanh toán</th>
+                    <th className="px-4 py-3 text-left">Trạng thái</th>
+                    <th className="px-4 py-3 text-left">Ngày tạo</th>
+                    <th className="px-4 py-3 text-center">Thao tác</th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                  {paginatedOrders.length === 0 ? (
+                  {orders.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                         Không tìm thấy đơn hàng nào
                       </td>
                     </tr>
                   ) : (
-                    paginatedOrders.map((o) => {
+                    orders.map((o) => {
                       const statusConfig = o.orderStatus ? orderStatusConfig[o.orderStatus] : null;
                       const StatusIcon = statusConfig?.icon || Clock;
 
@@ -386,7 +336,9 @@ export default function OrderPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-xs">
-                              <span className="font-medium">{o.paymentMethod ? PaymentMethodLabel[o.paymentMethod as keyof typeof PaymentMethodLabel] || o.paymentMethod : "-"}</span>
+                              <span className="font-medium">
+                                {o.paymentMethod ? PaymentMethodLabel[o.paymentMethod as keyof typeof PaymentMethodLabel] || o.paymentMethod : "-"}
+                              </span>
                               <div className={`text-xs ${o.payStatus === "PAID" ? "text-green-600" : "text-orange-600"}`}>
                                 {o.payStatus ? PayStatusLabel[o.payStatus] || o.payStatus : "-"}
                               </div>
@@ -396,7 +348,7 @@ export default function OrderPage() {
                             {statusConfig && (
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
                                 <StatusIcon className="w-3 h-3" />
-                                {o.orderStatus ? OrderStatusLabel[o.orderStatus] : "-"}
+                                {OrderStatusLabel[o.orderStatus!]}
                               </span>
                             )}
                           </td>
@@ -432,11 +384,12 @@ export default function OrderPage() {
             </div>
 
             {/* PAGINATION */}
-            {totalPages > 1 && (
+            {totalPages > 0 && (
               <div className="flex items-center justify-between pt-4">
                 <div className="text-sm text-gray-500">
-                  Hiển thị {page * size + 1} - {Math.min((page + 1) * size, filteredOrders.length)} / {filteredOrders.length}
+                  Hiển thị {(page * size) + 1} - {Math.min((page + 1) * size, totalElements)} / {totalElements} đơn hàng
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -445,9 +398,11 @@ export default function OrderPage() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-3 py-2 bg-indigo-600 text-white rounded-lg">
-                    {page + 1}
+
+                  <span className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">
+                    {page + 1} / {totalPages}
                   </span>
+
                   <button
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
@@ -680,10 +635,10 @@ function OrderTimeline({ status }: { status?: OrderStatus }) {
               <div key={s} className="flex flex-col items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive
-                    ? "bg-green-500 border-green-500 text-white"
-                    : isCurrent
-                      ? "bg-white border-green-500 text-green-500"
-                      : "bg-white border-gray-300 text-gray-400"
+                      ? "bg-green-500 border-green-500 text-white"
+                      : isCurrent
+                        ? "bg-white border-green-500 text-green-500"
+                        : "bg-white border-gray-300 text-gray-400"
                     }`}
                 >
                   <StatusIcon className="w-5 h-5" />

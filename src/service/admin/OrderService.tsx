@@ -1,7 +1,15 @@
-// orderService.ts
 import { apiClient } from "../api";
-import { OrderStatus, PayStatus, ProductStatus, PaymentMethod, DiscountType} from "../../types";
+import {
+  OrderStatus,
+  PayStatus,
+  ProductStatus,
+  PaymentMethod,
+  DiscountType
+} from "../../types";
 
+/* =========================
+   REQUEST TYPES
+========================= */
 export interface OrderItemRequest {
   productId: number;
   quantity: number;
@@ -19,6 +27,9 @@ export interface OrderRequest {
   items: OrderItemRequest[];
 }
 
+/* =========================
+   RESPONSE TYPES
+========================= */
 export interface OrderProductResponse {
   id: number;
   modelName?: string;
@@ -80,32 +91,65 @@ export interface OrderResponse {
   items?: OrderItemResponse[];
 }
 
+/* =========================
+   PAGE RESPONSE (IMPORTANT)
+========================= */
+export interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
+/* =========================
+   SEARCH PARAMS
+========================= */
 export interface OrderSearchParams {
   keyword?: string;
   status?: OrderStatus;
   accountId?: number;
+
+  // pagination
+  page?: number;
+  size?: number;
+  sort?: string; // e.g. "createAt,desc"
 }
 
+/* =========================
+   BASE URL
+========================= */
 const BASE_URL = "/admin/orders";
 
+/* =========================
+   SERVICE
+========================= */
 export const OrderService = {
-  /**
-   * GET ALL
-   */
-  async getAll(): Promise<OrderResponse[]> {
-    const response = await apiClient.get(
-      BASE_URL
-    );
 
-    return response.data;
-  },
+  /**
+   * GET ALL (PAGINATION)
+   */
+  // async getAll(
+  //   params?: OrderSearchParams
+  // ): Promise<PageResponse<OrderResponse>> {
+
+  //   const response = await apiClient.get(BASE_URL, {
+  //     params: {
+  //       page: params?.page ?? 0,
+  //       size: params?.size ?? 10,
+  //       sort: params?.sort ?? "createAt,desc"
+  //     }
+  //   });
+
+  //   return response.data;
+  // },
 
   /**
    * GET DETAIL
    */
-  async getById(
-    id: number
-  ): Promise<OrderResponse> {
+  async getById(id: number): Promise<OrderResponse> {
     const response = await apiClient.get(
       `${BASE_URL}/${id}`
     );
@@ -113,28 +157,40 @@ export const OrderService = {
     return response.data;
   },
 
-  /**
-   * SEARCH
-   */
-  async search(
-    params: OrderSearchParams
-  ): Promise<OrderResponse[]> {
-    const response = await apiClient.get(
-      `${BASE_URL}/search`,
-      {
-        params,
-      }
-    );
+  // OrderService.tsx - Phần getAll và search
 
-    return response.data;
-  },
+async getAll(params?: OrderSearchParams): Promise<PageResponse<OrderResponse>> {
+  const response = await apiClient.get(BASE_URL, {
+    params: {
+      page: params?.page ?? 0,
+      size: params?.size ?? 10,
+      sort: params?.sort ?? "createdAt,desc",
+      keyword: params?.keyword,
+      status: params?.status,
+      accountId: params?.accountId,
+    }
+  });
+  return response.data;
+},
+
+async search(params: OrderSearchParams): Promise<PageResponse<OrderResponse>> {
+  const response = await apiClient.get(`${BASE_URL}/search`, {
+    params: {
+      keyword: params.keyword,
+      status: params.status,
+      accountId: params.accountId,
+      page: params.page ?? 0,
+      size: params.size ?? 10,
+      sort: params.sort ?? "createdAt,desc",
+    }
+  });
+  return response.data;
+},
 
   /**
    * CREATE ORDER
    */
-  async create(
-    request: OrderRequest
-  ): Promise<OrderResponse> {
+  async create(request: OrderRequest): Promise<OrderResponse> {
     const response = await apiClient.post(
       BASE_URL,
       request
@@ -169,7 +225,7 @@ export const OrderService = {
       `${BASE_URL}/${id}/status`,
       null,
       {
-        params: { status },
+        params: { status }
       }
     );
 
@@ -179,9 +235,7 @@ export const OrderService = {
   /**
    * CANCEL ORDER
    */
-  async cancel(
-    id: number
-  ): Promise<OrderResponse> {
+  async cancel(id: number): Promise<OrderResponse> {
     const response = await apiClient.patch(
       `${BASE_URL}/${id}/cancel`
     );
@@ -193,8 +247,6 @@ export const OrderService = {
    * DELETE ORDER
    */
   async delete(id: number): Promise<void> {
-    await apiClient.delete(
-      `${BASE_URL}/${id}`
-    );
-  },
+    await apiClient.delete(`${BASE_URL}/${id}`);
+  }
 };

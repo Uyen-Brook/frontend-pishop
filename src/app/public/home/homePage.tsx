@@ -1,158 +1,294 @@
 import { useEffect, useState } from "react";
-import Header from "../../../components/layout/custommer/header/Header";
+
 import ProductCard from "../../../components/product/ProductCard";
+import SideBarV2 from "../../../components/menu/menuCategory/SideBarV2";
+import BrandBar from "../../../components/menu/BrandBar";
 
 import { categoryService } from "../../../service/custommer/categoryService";
 import { productService } from "../../../service/custommer/productService";
 import { brandService } from "../../../service/custommer/brandService";
 
-import type { Category, ProductSumaryResponse, Brand } from "../../../types/index";
-import SideBarV2 from "../../../components/menu/menuCategory/SideBarV2";
-import BrandBar from "../../../components/menu/BrandBar";
+import type {
+  Category,
+  ProductSumaryResponse,
+  Brand,
+} from "../../../types";
+
 import "./homePage.css";
 
 export default function HomePage() {
+
+  // ============================
+  // STATE
+  // ============================
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const [products, setProducts] = useState<ProductSumaryResponse[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  //menu trikger
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // Tải danh sách categories
+
+  const [products, setProducts] =
+    useState<ProductSumaryResponse[]>([]);
+
+  const [selectedCategory, setSelectedCategory] =
+    useState<number | null>(null);
+
+  const [selectedBrand, setSelectedBrand] =
+    useState<number | null>(null);
+
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] =
+    useState(false);
+
+  // ============================
+  // PAGINATION (ONLY PRODUCT)
+  // ============================
+  const [page, setPage] = useState(0);
+  const size = 8;
+
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // ============================
+  // LOAD CATEGORY + BRAND (NO PAGE)
+  // ============================
   useEffect(() => {
-    const fetchCategories = async () => {
+
+    const fetchData = async () => {
+
       try {
-        const categoriesData = await categoryService.getAll();
-        setCategories(categoriesData);
+
+        const [cats, brs] = await Promise.all([
+          categoryService.getAll(),
+          brandService.getAll(),
+        ]);
+
+        setCategories(cats ?? []);
+        setBrands(brs ?? []);
+
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Load category/brand error:", error);
       }
     };
-    fetchCategories();
+
+    fetchData();
+
   }, []);
 
-  // Tải danh sách brands
+  // ============================
+  // RESET PAGE WHEN FILTER CHANGE
+  // ============================
   useEffect(() => {
-    const fetchBrands = async () => {
-      try {
-        const brandsData = await brandService.getAll();
-        setBrands(brandsData);
-      } catch (error) {
-        console.error("Error fetching brands:", error);
-      }
-    };
-    fetchBrands();
-  }, []);
+    setPage(0);
+  }, [selectedCategory, selectedBrand]);
 
-  // Tải sản phẩm khi thay đổi category hoặc brand
+  // ============================
+  // LOAD PRODUCTS (PAGINATION SAFE)
+  // ============================
   useEffect(() => {
+
     const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        let productsData: ProductSumaryResponse[];
 
+      setIsLoading(true);
+
+      try {
+
+        let response: any;
+
+        // CATEGORY + BRAND
         if (selectedCategory && selectedBrand) {
-          // Lọc theo cả category và brand
-          productsData = await productService.getByCategoryAndBrand(selectedCategory, selectedBrand);
-        } else if (selectedCategory) {
-          // Lọc theo category nếu được chọn
-          productsData = await productService.getByCategory(selectedCategory);
-        } else {
-          // Hiển thị tất cả sản phẩm nếu không chọn category nào
-          productsData = await productService.getAll();
+
+          response = await productService.filterProducts({
+            categoryId: selectedCategory,
+            brandId: selectedBrand,
+            page,
+            size,
+          });
         }
-        setProducts(productsData);
+
+        // CATEGORY ONLY
+        else if (selectedCategory) {
+
+          response = await productService.getByCategory(
+            selectedCategory,
+            { page, size }
+          );
+        }
+
+        // BRAND ONLY
+        else if (selectedBrand) {
+
+          response = await productService.getByBrand(
+            selectedBrand,
+            { page, size }
+          );
+        }
+
+        // ALL
+        else {
+
+          response = await productService.getAll({
+            page,
+            size,
+          });
+        }
+
+        // ============================
+        // SAFE SET (TRÁNH UNDEFINED CRASH)
+        // ============================
+        setProducts(response?.content ?? []);
+        setTotalPages(response?.totalPages ?? 0);
+        setTotalElements(response?.totalElements ?? 0);
+
       } catch (error) {
-        console.error("Error fetching products:", error);
+
+        console.error("Load products error:", error);
+
+        setProducts([]);
+        setTotalPages(0);
+        setTotalElements(0);
+
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProducts();
-  }, [selectedCategory, selectedBrand]);
 
+    fetchProducts();
+
+  }, [selectedCategory, selectedBrand, page]);
+
+  // ============================
+  // UI
+  // ============================
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="max-w-7xl mx-auto px-4 py-6">
+
+      {/* MOBILE MENU BUTTON */}
       <button
-        className="lg:hidden mb-4 px-4 py-2 bg-blue-500 text-white rounded sticky top-0 z-50"
+        className="lg:hidden mb-4 px-4 py-2 bg-blue-500 text-white rounded"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
       >
         {isMenuOpen ? "Đóng Menu" : "Mở Menu"}
       </button>
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-        {/* Left Sidebar - Categories */}
-        <div className={`${isMenuOpen ? "block" : "hidden"} lg:block lg:w-55 lg:flex-shrink-0`}>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+
+        {/* SIDEBAR */}
+        <div className={`
+          ${isMenuOpen ? "block" : "hidden"}
+          lg:block
+          lg:w-60
+        `}>
           <SideBarV2
             categories={categories}
             activeCategory={selectedCategory ?? undefined}
-            onSelect={(id) => {
-              setSelectedCategory(selectedCategory === id ? null : id);
-              
-            }}
-            
+            onSelect={(id) =>
+              setSelectedCategory(
+                selectedCategory === id ? null : id
+              )
+            }
           />
         </div>
-        {/* <div className="hidden lg:block lg:w-55 lg:flex-shrink-0">
-          <SideBarV2 
-            categories={categories}
-            activeCategory={selectedCategory ?? undefined}
-            onSelect={(id) => {
-              setSelectedCategory(selectedCategory === id ? null : id);
-            }}
-          />
-        </div> */}
 
-        {/* Right Content Area */}
-        <div className="w-full lg:flex-1">
-          {/* Brand Bar */}
+        {/* CONTENT */}
+        <div className="flex-1">
+
+          {/* BRAND BAR */}
           <BrandBar
             brands={brands}
             selectedBrand={selectedBrand}
-            onSelect={setSelectedBrand}
+            onSelect={(id) =>
+              setSelectedBrand(
+                selectedBrand === id ? null : id
+              )
+            }
           />
 
-          {/* Products Section */}
-          <div>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                {selectedCategory && selectedBrand
-                  ? `${categories.find(c => c.id === selectedCategory)?.name} - ${brands.find(b => b.id === selectedBrand)?.name}`
-                  : selectedCategory
-                    ? categories.find(c => c.id === selectedCategory)?.name
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-4">
+
+            <h2 className="text-xl font-bold">
+
+              {selectedCategory && selectedBrand
+                ? `${categories.find(c => c.id === selectedCategory)?.name} - ${brands.find(b => b.id === selectedBrand)?.name}`
+                : selectedCategory
+                  ? categories.find(c => c.id === selectedCategory)?.name
+                  : selectedBrand
+                    ? brands.find(b => b.id === selectedBrand)?.name
                     : "Tất cả sản phẩm"}
-              </h2>
-              <span className="text-xs sm:text-sm text-gray-600 font-medium">
-                {isLoading ? "Đang tải..." : `${products.length} sản phẩm`}
-              </span>
+            </h2>
+
+            <span className="text-sm text-gray-600">
+              {isLoading
+                ? "Đang tải..."
+                : `${totalElements ?? 0} sản phẩm`}
+            </span>
+          </div>
+
+          {/* PRODUCTS */}
+          {isLoading ? (
+
+            <div className="text-center py-10">
+              Loading...
             </div>
 
-            {isLoading ? (
-              <div className="flex justify-center items-center h-48 sm:h-64">
-                <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-500"></div>
-                  <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Đang tải sản phẩm...</p>
-                </div>
-              </div>
-            ) : products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          ) : (products?.length ?? 0) > 0 ? (
+
+            <>
+              {/* GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
                 {products.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                  />
                 ))}
               </div>
-            ) : (
-              <div className="flex justify-center items-center h-48 sm:h-64">
-                <div className="text-center">
-                  <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                  <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 font-medium">Không có sản phẩm nào</p>
-                </div>
+
+              {/* PAGINATION */}
+              <div className="flex justify-center gap-2 mt-6">
+
+                <button
+                  disabled={page === 0}
+                  onClick={() => setPage(p => p - 1)}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Prev
+                </button>
+
+                {Array.from(
+                  { length: totalPages },
+                  (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPage(i)}
+                      className={`px-3 py-1 border rounded ${
+                        page === i
+                          ? "bg-blue-500 text-white"
+                          : ""
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  )
+                )}
+
+                <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
               </div>
-            )}
-          </div>
+            </>
+
+          ) : (
+
+            <div className="text-center py-10">
+              Không có sản phẩm
+            </div>
+          )}
         </div>
       </div>
     </div>
