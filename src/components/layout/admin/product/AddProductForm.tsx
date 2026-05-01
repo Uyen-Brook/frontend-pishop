@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import Card from "../../../../components/card/Card";
 import InputField from "../../../../components/field/InputField";
 import Label from "../../../../components/field/LabelField";
-import Switch from "../../../../components/field/Switch";
 import { brandService, BrandResponse } from "../../../../service/admin/BrandService";
 import { CategoryService, CategoryResponse } from "../../../../service/admin/CategoryService";
 import { SupplierService } from "../../../../service/admin/SupplierService";
@@ -11,13 +10,19 @@ import {
     ProductStatus,
     productStatusLabels,
     ProductCreateRequest,
+    ProductUpdateRequest,
     SpecEntry,
-    Category,
-    Brand,
-    ProductSumaryResponse,
     ProductResponse,
     SupplierResponse,
 } from "../../../../types/index";
+
+// ─── Props Interface ───────────────────────────────────────────────────────────
+interface AddProductFormProps {
+    isOpen: boolean;
+    initialProduct?: ProductResponse | null;
+    onClose: () => void;
+    onSuccess: () => void;
+}
 
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -70,63 +75,44 @@ const HelpIcon = () => (
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const genId = () => Math.random().toString(36).slice(2, 8);
 
-const CATEGORIES = [
-    { id: 1, name: "Laptop" },
-    { id: 2, name: "Smartphone" },
-    { id: 3, name: "Tablet" },
-    { id: 4, name: "Accessories" },
-];
-
 // ─── Component ────────────────────────────────────────────────────────────────
-const AddNewProduct: React.FC = () => {
+const AddNewProduct: React.FC<AddProductFormProps> = ({ isOpen, initialProduct, onClose, onSuccess }) => {
+    const isEditing = !!initialProduct;
+
     // ── Form state ─────────────────────────────────────────────────────────────
-    // sửa type form state
     const [form, setForm] = useState<ProductCreateRequest>({
         modelName: "",
         modelNumber: "",
         specification: "",
         description: "",
-
         importPrice: 0,
         taxVat: 0,
         price: 0,
-
         quantity: 0,
         productStatus: "NEW",
-
         brandId: 0,
         supplierId: 0,
         categoryId: 0,
-
         thumbnail: undefined,
         listImage: [],
     });
 
-    const [publishToStore, setPublishToStore] = useState(true);
-    const [tags, setTags] = useState<string[]>(["NEW", "PREMIUM"]);
-    const [tagInput, setTagInput] = useState("");
-    // sửa SpecEntry state
     const [specs, setSpecs] = useState<(SpecEntry & { id: string })[]>([
-        {
-            id: genId(),
-            key: "CPU",
-            value: "Apple M3 Chip",
-        },
-        {
-            id: genId(),
-            key: "RAM",
-            value: "16GB Unified Memory",
-        },
-        {
-            id: genId(),
-            key: "",
-            value: "",
-        },
+        { id: genId(), key: "", value: "" },
     ]);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+    const [keptImages, setKeptImages] = useState<string[]>([]);
+    const [deletedImages, setDeletedImages] = useState<string[]>([]);
+
+    // Data states - must be declared before useEffect
+    const [categories, setCategories] = useState<CategoryResponse[]>([]);
+    const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
+    const [brands, setBrands] = useState<BrandResponse[]>([]);
+
     const thumbnailRef = useRef<HTMLInputElement>(null);
     const galleryRef = useRef<HTMLInputElement>(null);
+
     // build specific
     const buildSpecification = () => {
         const obj: Record<string, string> = {};
@@ -140,16 +126,76 @@ const AddNewProduct: React.FC = () => {
         return JSON.stringify(obj);
     };
 
-
+    // Populate form when editing
     useEffect(() => {
         loadCategories();
         loadBrands();
         loadSupplier();
-    }, []);
 
-    const [categories, setCategories] = useState<CategoryResponse[]>([]);
-    const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
-    const [brands, setBrands] = useState<BrandResponse[]>([]);
+        if (initialProduct) {
+            // Edit mode - populate form
+            setForm({
+                modelName: initialProduct.modelName || "",
+                modelNumber: initialProduct.modelNumber || "",
+                specification: typeof initialProduct.specification === "string"
+                    ? initialProduct.specification
+                    : JSON.stringify(initialProduct.specification || {}),
+                description: initialProduct.description || "",
+                importPrice: 0, // Not in ProductResponse, default to 0
+                taxVat: 0,
+                price: initialProduct.price || 0,
+                quantity: initialProduct.quantity || 0,
+                productStatus: (initialProduct.productStatus as ProductStatus) || "NEW",
+                brandId: 0, // Will be set after brands load
+                supplierId: 0,
+                categoryId: 0,
+                thumbnail: undefined,
+                listImage: [],
+            });
+
+            // Parse specification
+            if (initialProduct.specification) {
+                try {
+                    const specObj = typeof initialProduct.specification === "string"
+                        ? JSON.parse(initialProduct.specification)
+                        : initialProduct.specification;
+                    const specArray = Object.entries(specObj).map(([key, value]) => ({
+                        id: genId(),
+                        key,
+                        value: String(value),
+                    }));
+                    setSpecs(specArray.length > 0 ? specArray : [{ id: genId(), key: "", value: "" }]);
+                } catch {
+                    setSpecs([{ id: genId(), key: "", value: "" }]);
+                }
+            }
+
+            setThumbnailPreview(initialProduct.thumbnail);
+            setGalleryPreviews(initialProduct.listImage || []);
+            setKeptImages(initialProduct.listImage || []);
+            setDeletedImages([]);
+        } else {
+            // Create mode - reset form
+            resetForm();
+        }
+    }, [initialProduct]);
+
+    // Update IDs when brands/categories/suppliers load
+    useEffect(() => {
+        if (initialProduct && brands.length > 0 && categories.length > 0 && suppliers.length > 0) {
+            const brandId = brands.find((b) => b.name === initialProduct.brandName)?.id || 0;
+            const categoryId = categories.find((c) => c.name === initialProduct.categoryName)?.id || 0;
+            const supplierId = suppliers.find((s) => s.name === initialProduct.supplierName)?.id || 0;
+
+            setForm((prev) => ({
+                ...prev,
+                brandId,
+                supplierId,
+                categoryId,
+            }));
+        }
+    }, [initialProduct, brands, categories, suppliers]);
+
     const loadCategories = async () => {
         try {
             const res = await CategoryService.getAll();
@@ -227,16 +273,6 @@ const AddNewProduct: React.FC = () => {
         }));
     };
 
-    const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && tagInput.trim()) {
-            e.preventDefault();
-            const newTag = tagInput.trim().toUpperCase();
-            if (!tags.includes(newTag)) setTags((prev) => [...prev, newTag]);
-            setTagInput("");
-        }
-    };
-
-    const removeTag = (tag: string) => setTags((prev) => prev.filter((t) => t !== tag));
 
     const addSpec = () =>
         setSpecs((prev) => [...prev, { id: genId(), key: "", value: "" }]);
@@ -255,6 +291,7 @@ const AddNewProduct: React.FC = () => {
             ...prev,
             thumbnail: file,
         }));
+        setThumbnailPreview(URL.createObjectURL(file));
     };
 
     const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,6 +301,32 @@ const AddNewProduct: React.FC = () => {
             ...prev,
             listImage: [...(prev.listImage ?? []), ...files],
         }));
+
+        // Add previews for new files
+        const newPreviews = files.map((file) => URL.createObjectURL(file));
+        setGalleryPreviews((prev) => [...prev, ...newPreviews]);
+    };
+
+    const removeGalleryImage = (index: number) => {
+        const removedUrl = galleryPreviews[index];
+        setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
+
+        // Check if it's an existing image (keptImages) or new image (listImage)
+        if (keptImages.includes(removedUrl)) {
+            // Remove from keptImages and add to deletedImages
+            setKeptImages((prev) => prev.filter((url) => url !== removedUrl));
+            setDeletedImages((prev) => [...prev, removedUrl]);
+        } else {
+            // Remove from new images
+            setForm((prev) => ({
+                ...prev,
+                listImage: (prev.listImage || []).filter((_, i) => {
+                    // Find index in listImage that matches the removed preview
+                    const fileIndex = index - keptImages.length;
+                    return i !== fileIndex;
+                }),
+            }));
+        }
     };
 
     // sửa buildPayload
@@ -279,40 +342,72 @@ const AddNewProduct: React.FC = () => {
         };
     };
 
-    const handleSave = () => {
-        const payload = buildPayload();
+    const resetForm = () => {
+        setForm({
+            modelName: "",
+            modelNumber: "",
+            specification: "",
+            description: "",
+            importPrice: 0,
+            taxVat: 0,
+            price: 0,
+            quantity: 0,
+            productStatus: "NEW",
+            brandId: 0,
+            supplierId: 0,
+            categoryId: 0,
+            thumbnail: undefined,
+            listImage: [],
+        });
+        setSpecs([{ id: genId(), key: "", value: "" }]);
+        setThumbnailPreview(null);
+        setGalleryPreviews([]);
+        setKeptImages([]);
+        setDeletedImages([]);
+    };
 
-        const formData = new FormData();
-
-        formData.append("modelName", payload.modelName ?? "");
-        formData.append("modelNumber", payload.modelNumber ?? "");
-        formData.append("description", payload.description ?? "");
-
-        formData.append("importPrice", String(payload.importPrice ?? 0));
-        formData.append("taxVat", String(payload.taxVat ?? 0));
-        formData.append("price", String(payload.price ?? 0));
-        formData.append("quantity", String(payload.quantity ?? 0));
-
-        formData.append("productStatus", payload.productStatus ?? "NEW");
-
-        formData.append("brandId", String(payload.brandId ?? 0));
-        formData.append("supplierId", String(payload.supplierId ?? 0));
-        formData.append("categoryId", String(payload.categoryId ?? 0));
-
-        formData.append("specification", payload.specification ?? "{}");
-
-        if (payload.thumbnail) {
-            formData.append("thumbnail", payload.thumbnail);
+    const handleSave = async () => {
+        const errors = validateForm();
+        if (errors.length > 0) {
+            alert(errors.join("\n"));
+            return;
         }
 
-        payload.listImage?.forEach((file) => {
-            formData.append("listImage", file);
-        });
-
-        console.log("FORMDATA READY:", formData);
-
-        // call API
-        // productService.create(formData)
+        try {
+            if (isEditing && initialProduct) {
+                // Update mode
+                const updatePayload: ProductUpdateRequest = {
+                    modelName: form.modelName,
+                    modelNumber: form.modelNumber,
+                    description: form.description,
+                    price: form.price,
+                    quantity: form.quantity,
+                    importPrice: form.importPrice,
+                    productStatus: form.productStatus,
+                    specification: JSON.parse(buildSpecification()),
+                    brandId: form.brandId,
+                    supplierId: form.supplierId,
+                    categoryId: form.categoryId,
+                    thumbnail: form.thumbnail,
+                    newImages: form.listImage,
+                    deletedImages: deletedImages,
+                    keptImages: keptImages,
+                };
+                await ProductService.update(initialProduct.id, updatePayload);
+                alert("Cập nhật sản phẩm thành công!");
+            } else {
+                // Create mode
+                const payload = buildPayload();
+                await ProductService.create(payload);
+                alert("Thêm sản phẩm thành công!");
+            }
+            onSuccess();
+            onClose();
+            resetForm();
+        } catch (error) {
+            console.error("Error saving product:", error);
+            alert(isEditing ? "Có lỗi xảy ra khi cập nhật sản phẩm!" : "Có lỗi xảy ra khi thêm sản phẩm!");
+        }
     };
     const handleDraft = () => {
         const payload = buildPayload();
@@ -330,41 +425,33 @@ const AddNewProduct: React.FC = () => {
     }, [profitPerItem, form.quantity]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
+    if (!isOpen) return null;
+
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-            <div className="max-w-5xl mx-auto">
-
-                {/* Breadcrumb */}
-                <p className="text-xs text-gray-400 mb-4">
-                    Dashboard &rsaquo; Inventory &rsaquo;{" "}
-                    <span className="text-red-500 font-medium">Add New Product</span>
-                </p>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+            <Card extra="w-full max-w-5xl p-6 my-8">
                 {/* Page Header */}
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
-                            Nhập sản phẩm mới
+                            {isEditing ? "Chỉnh sửa sản phẩm" : "Nhập sản phẩm mới"}
                         </h1>
                         <p className="text-sm text-gray-400 mt-1">
-                            Create a new listing for your global tech inventory.
+                            {isEditing ? "Cập nhật thông tin sản phẩm" : "Tạo sản phẩm mới cho cửa hàng"}
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <button className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            Hủy
-                        </button>
                         <button
-                            onClick={handleDraft}
-                            className="px-4 py-2 text-sm font-medium rounded-lg border border-red-400 text-red-500 bg-white hover:bg-red-50 transition"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                         >
-                            Lưu bản nháp
+                            Hủy
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition"
                         >
-                            Lưu sản phẩm
+                            {isEditing ? "Cập nhật" : "Lưu sản phẩm"}
                         </button>
                     </div>
                 </div>
@@ -412,7 +499,7 @@ const AddNewProduct: React.FC = () => {
                                         className="mt-2 h-12 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-3 text-sm text-gray-700 dark:text-white outline-none focus:border-red-400 transition"
                                     >
                                         <option value="">------- chọn danh mục  ------</option>
-                                        {CATEGORIES.map((c) => (
+                                        {categories.map((c) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
@@ -712,12 +799,19 @@ const AddNewProduct: React.FC = () => {
                                     +
                                 </div>
                                 {galleryPreviews.map((url, i) => (
-                                    <img
-                                        key={i}
-                                        src={url}
-                                        alt={`Gallery ${i + 1}`}
-                                        className="w-14 h-14 rounded-xl object-cover border border-gray-200"
-                                    />
+                                    <div key={i} className="relative">
+                                        <img
+                                            src={url}
+                                            alt={`Gallery ${i + 1}`}
+                                            className="w-14 h-14 rounded-xl object-cover border border-gray-200"
+                                        />
+                                        <button
+                                            onClick={() => removeGalleryImage(i)}
+                                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                             <input
@@ -728,30 +822,6 @@ const AddNewProduct: React.FC = () => {
                                 className="hidden"
                                 onChange={handleGalleryChange}
                             />
-                        </Card>
-
-                        {/* Visibility */}
-                        <Card extra="p-5">
-                            <div className="flex items-center gap-2 mb-4">
-                                <EyeIcon />
-                                <h2 className="text-sm font-semibold text-gray-700 dark:text-white">
-                                    Visibility
-                                </h2>
-                            </div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-700 dark:text-white">
-                                        Publish to Store
-                                    </p>
-                                    <p className="text-xs text-gray-400">Visible to all customers</p>
-                                </div>
-                                <Switch
-                                    checked={publishToStore}
-                                    onChange={setPublishToStore}
-                                    color="green"
-                                />
-                            </div>
-
                         </Card>
 
                         {/* Help */}
@@ -769,7 +839,7 @@ const AddNewProduct: React.FC = () => {
 
                     </div>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 };

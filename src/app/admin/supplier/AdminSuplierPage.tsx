@@ -1,8 +1,8 @@
+"use client";
 
-import { useMemo, useState, ChangeEvent } from "react";
+import { useMemo, useState, ChangeEvent, useEffect } from "react";
 
 import Card from "../../../components/card/Card";
-import InputField from "../../../components/field/InputField";
 import Label from "../../../components/field/LabelField";
 
 import {
@@ -16,23 +16,19 @@ import {
   Phone,
   MapPin,
   X,
+  User,
 } from "lucide-react";
+import { MdAdd, MdDelete, MdEdit } from "react-icons/md";
+
+import { SupplierService } from "../../../service/admin/SupplierService";
+import { SupplierRequest, SupplierResponse, SupplierDetailResponse } from "../../../types/index";
 
 // ============================================
 // TYPES
 // ============================================
 
-interface Supplier {
-  id: number;
-  name: string;
-  taxcode: string;
-  email: string;
-  phone: string;
-  logo: string;
-  address: string;
-  note: string;
-  website: string;
-  totalProducts: number;
+interface Supplier extends SupplierResponse {
+  totalProducts?: number;
 }
 
 interface SupplierForm {
@@ -44,41 +40,8 @@ interface SupplierForm {
   address: string;
   note: string;
   website: string;
+  representative: string;
 }
-
-// ============================================
-// MOCK DATA
-// ============================================
-
-const initialSuppliers: Supplier[] = [
-  {
-    id: 1,
-    name: "Apple Supplier Ltd",
-    taxcode: "VN00123456",
-    email: "contact@apple-supplier.com",
-    phone: "0988888888",
-    logo:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
-    address: "Ha Noi, Viet Nam",
-    note: "Premium electronic supplier",
-    website: "https://apple.com",
-    totalProducts: 125,
-  },
-
-  {
-    id: 2,
-    name: "Samsung Global",
-    taxcode: "VN00987654",
-    email: "support@samsung.com",
-    phone: "0977777777",
-    logo:
-      "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
-    address: "Ho Chi Minh City, Viet Nam",
-    note: "Samsung official supplier",
-    website: "https://samsung.com",
-    totalProducts: 89,
-  },
-];
 
 // ============================================
 // EMPTY FORM
@@ -93,6 +56,7 @@ const emptyForm: SupplierForm = {
   address: "",
   note: "",
   website: "",
+  representative: "",
 };
 
 // ============================================
@@ -104,23 +68,55 @@ export default function SupplierManagementPage() {
   // STATES
   // ============================================
 
-  const [suppliers, setSuppliers] =
-    useState<Supplier[]>(initialSuppliers);
+  const [suppliers, setSuppliers] = useState<SupplierDetailResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [previewSupplier, setPreviewSupplier] = useState<SupplierDetailResponse| null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<SupplierDetailResponse | null>(null);
+  const [form, setForm] = useState<SupplierForm>(emptyForm);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
-  const [search, setSearch] =
-    useState("");
+  // ============================================
+  // EFFECTS
+  // ============================================
 
-  const [openModal, setOpenModal] =
-    useState(false);
+  useEffect(() => {
+    loadSuppliers();
+  }, []);
 
-  const [previewSupplier, setPreviewSupplier] =
-    useState<Supplier | null>(null);
+  // ============================================
+  // API CALLS
+  // ============================================
 
-  const [editingSupplier, setEditingSupplier] =
-    useState<Supplier | null>(null);
+  const loadSuppliers = async () => {
+    try {
+      setLoading(true);
+      const res = await SupplierService.getAll();
+      setSuppliers(res.map((s) => ({ ...s, totalProducts: 0 })));
+    } catch (error) {
+      console.error("Cannot load suppliers", error);
+      alert("Không thể tải danh sách nhà cung cấp");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const [form, setForm] =
-    useState<SupplierForm>(emptyForm);
+  const handleSearch = async () => {
+    if (!search.trim()) {
+      loadSuppliers();
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await SupplierService.search(search);
+      setSuppliers(res.map((s) => ({ ...s, totalProducts: 0 })));
+    } catch (error) {
+      console.error("Search error", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ============================================
   // FILTER
@@ -152,19 +148,13 @@ export default function SupplierManagementPage() {
   // HANDLE IMAGE
   // ============================================
 
-  const handleImageUpload = (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
+    setLogoFile(file);
     const imageUrl = URL.createObjectURL(file);
-
-    setForm((prev) => ({
-      ...prev,
-      logo: imageUrl,
-    }));
+    setForm((prev) => ({ ...prev, logo: imageUrl }));
   };
 
   // ============================================
@@ -174,6 +164,7 @@ export default function SupplierManagementPage() {
   const handleOpenCreate = () => {
     setEditingSupplier(null);
     setForm(emptyForm);
+    setLogoFile(null);
     setOpenModal(true);
   };
 
@@ -181,22 +172,20 @@ export default function SupplierManagementPage() {
   // OPEN EDIT
   // ============================================
 
-  const handleOpenEdit = (
-    supplier: Supplier
-  ) => {
+  const handleOpenEdit = (supplier:SupplierDetailResponse) => {
     setEditingSupplier(supplier);
-
     setForm({
       name: supplier.name,
-      taxcode: supplier.taxcode,
-      email: supplier.email,
-      phone: supplier.phone,
-      logo: supplier.logo,
-      address: supplier.address,
-      note: supplier.note,
-      website: supplier.website,
+      taxcode: supplier.taxcode || "",
+      email: supplier.email || "",
+      phone: supplier.phone || "",
+      logo: supplier.logo || "",
+      address: supplier.address || "",
+      note: supplier.note || "",
+      website: supplier.website || "",
+      representative: supplier.representative || "",
     });
-
+    setLogoFile(null);
     setOpenModal(true);
   };
 
@@ -204,63 +193,59 @@ export default function SupplierManagementPage() {
   // SAVE SUPPLIER
   // ============================================
 
-  const handleSaveSupplier = () => {
-    if (
-      !form.name ||
-      !form.email ||
-      !form.phone
-    ) {
-      alert("Please fill required fields");
+  const handleSaveSupplier = async () => {
+    if (!form.name || !form.email || !form.phone) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc (Tên, Email, Số điện thoại)");
       return;
     }
 
-    // EDIT
-    if (editingSupplier) {
-      setSuppliers((prev) =>
-        prev.map((supplier) =>
-          supplier.id === editingSupplier.id
-            ? {
-                ...supplier,
-                ...form,
-              }
-            : supplier
-        )
-      );
-    }
-
-    // CREATE
-    else {
-      const newSupplier: Supplier = {
-        id: Date.now(),
-        ...form,
-        totalProducts: 0,
+    try {
+      const request: SupplierRequest = {
+        name: form.name,
+        taxcode: form.taxcode,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        note: form.note,
+        website: form.website,
+        representative: form.representative,
       };
 
-      setSuppliers((prev) => [
-        newSupplier,
-        ...prev,
-      ]);
-    }
+      if (editingSupplier) {
+        await SupplierService.update(editingSupplier.id, request, logoFile || undefined);
+        alert("Cập nhật nhà cung cấp thành công!");
+      } else {
+        await SupplierService.create(request, logoFile || undefined);
+        alert("Thêm nhà cung cấp thành công!");
+      }
 
-    setOpenModal(false);
-    setForm(emptyForm);
-    setEditingSupplier(null);
+      await loadSuppliers();
+      setOpenModal(false);
+      setForm(emptyForm);
+      setLogoFile(null);
+      setEditingSupplier(null);
+    } catch (error) {
+      console.error("Save error", error);
+      alert("Có lỗi xảy ra khi lưu nhà cung cấp");
+    }
   };
 
   // ============================================
   // DELETE
   // ============================================
 
-  const handleDelete = (id: number) => {
-    const confirmDelete = confirm(
-      "Are you sure you want to delete this supplier?"
-    );
-
+  const handleDelete = async (id: number) => {
+    const confirmDelete = confirm("Bạn có chắc muốn xóa nhà cung cấp này?");
     if (!confirmDelete) return;
 
-    setSuppliers((prev) =>
-      prev.filter((supplier) => supplier.id !== id)
-    );
+    try {
+      await SupplierService.delete(id);
+      alert("Xóa nhà cung cấp thành công!");
+      await loadSuppliers();
+    } catch (error) {
+      console.error("Delete error", error);
+      alert("Không thể xóa nhà cung cấp");
+    }
   };
 
   // ============================================
@@ -273,11 +258,11 @@ export default function SupplierManagementPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Supplier Management
+            Quản lý nhà cung cấp
           </h1>
 
           <p className="mt-1 text-sm text-gray-500">
-            Manage supplier information
+            Quản lý thông tin nhà cung cấp sản phẩm
           </p>
         </div>
 
@@ -285,8 +270,8 @@ export default function SupplierManagementPage() {
           onClick={handleOpenCreate}
           className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
         >
-          <Plus className="h-5 w-5" />
-          Add Supplier
+          <MdAdd className="h-5 w-5" />
+          Thêm nhà cung cấp
         </button>
       </div>
 
@@ -297,7 +282,7 @@ export default function SupplierManagementPage() {
           onChange={(e) =>
             setSearch(e.target.value)
           }
-          placeholder="Search supplier..."
+          placeholder="Tìm kiếm nhà cung cấp..."
           className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
         />
       </Card>
@@ -305,31 +290,29 @@ export default function SupplierManagementPage() {
       {/* TABLE */}
       <Card extra="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1600px]">
+          <table className="w-full ">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">
-                  Supplier
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  ID
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">
-                  Contact
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Nhà cung cấp
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">
-                  Tax Code
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Liên hệ
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Mã số thuế
+                </th>
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Người đại diện
+                </th>
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Website
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">
-                  Products
-                </th>
-
-                <th className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500">
-                  Actions
+                <th className="px-3 py-4 text-center text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -338,24 +321,25 @@ export default function SupplierManagementPage() {
               {filteredSuppliers.map((supplier) => (
                 <tr
                   key={supplier.id}
-                  className="transition hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/5"
                 >
-                  {/* SUPPLIER */}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-white p-2">
-                        <img
-                          src={supplier.logo}
-                          alt={supplier.name}
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
+                  {/* ID */}
+                  <td className="px-3 py-4">
+                    <p className="text-sm text-gray-500">#{supplier.id}</p>
+                  </td>
 
+                  {/* SUPPLIER */}
+                  <td className="px-3 py-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={supplier.logo || "/placeholder.png"}
+                        alt={supplier.name}
+                        className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1"
+                      />
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {supplier.name}
                         </h3>
-
                         <p className="text-sm text-gray-500">
                           {supplier.email}
                         </p>
@@ -364,13 +348,12 @@ export default function SupplierManagementPage() {
                   </td>
 
                   {/* CONTACT */}
-                  <td className="px-6 py-5">
-                    <div className="space-y-2 text-sm">
+                  <td className="px-3 py-4">
+                    <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                         <Phone className="h-4 w-4" />
                         {supplier.phone}
                       </div>
-
                       <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                         <Mail className="h-4 w-4" />
                         {supplier.email}
@@ -379,61 +362,57 @@ export default function SupplierManagementPage() {
                   </td>
 
                   {/* TAX CODE */}
-                  <td className="px-6 py-5 text-sm text-gray-700 dark:text-gray-300">
-                    {supplier.taxcode}
+                  <td className="px-3 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {supplier.taxcode || "-"}
+                  </td>
+
+                  {/* REPRESENTATIVE */}
+                  <td className="px-3 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {supplier.representative || "-"}
                   </td>
 
                   {/* WEBSITE */}
-                  <td className="px-6 py-5">
-                    <a
-                      href={supplier.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      <Globe className="h-4 w-4" />
-                      Visit
-                    </a>
-                  </td>
-
-                  {/* PRODUCTS */}
-                  <td className="px-6 py-5">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-600">
-                      {supplier.totalProducts} products
-                    </span>
+                  <td className="px-3 py-4">
+                    {supplier.website ? (
+                      <a
+                        href={supplier.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </a>
+                    ) : (
+                      <span className="text-sm text-gray-400">-</span>
+                    )}
                   </td>
 
                   {/* ACTIONS */}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-3 py-4">
+                    <div className="flex items-center justify-center gap-2">
                       {/* DETAIL */}
                       <button
-                        onClick={() =>
-                          setPreviewSupplier(supplier)
-                        }
-                        className="rounded-lg p-2 text-green-600 transition hover:bg-green-50"
+                        onClick={() => setPreviewSupplier(supplier)}
+                        className="rounded-lg bg-green-500 p-2 text-white transition hover:opacity-80"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
 
                       {/* EDIT */}
                       <button
-                        onClick={() =>
-                          handleOpenEdit(supplier)
-                        }
-                        className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
+                        onClick={() => handleOpenEdit(supplier)}
+                        className="rounded-lg bg-yellow-400 p-2 text-white transition hover:opacity-80"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <MdEdit className="text-lg" />
                       </button>
 
                       {/* DELETE */}
                       <button
-                        onClick={() =>
-                          handleDelete(supplier.id)
-                        }
-                        className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                        onClick={() => handleDelete(supplier.id)}
+                        className="rounded-lg bg-red-500 p-2 text-white transition hover:opacity-80"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <MdDelete className="text-lg" />
                       </button>
                     </div>
                   </td>
@@ -455,8 +434,8 @@ export default function SupplierManagementPage() {
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {editingSupplier
-                  ? "Edit Supplier"
-                  : "Add Supplier"}
+                  ? "Chỉnh sửa nhà cung cấp"
+                  : "Thêm nhà cung cấp"}
               </h2>
 
               <button
@@ -474,14 +453,8 @@ export default function SupplierManagementPage() {
               <div>
                 <Label
                   htmlFor="name"
-                  text="Supplier Name"
+                  text="Tên nhà cung cấp"
                   required
-                />
-
-                <InputField
-                  id="name"
-                  label=""
-                  placeholder="Enter supplier name"
                 />
 
                 <input
@@ -492,7 +465,7 @@ export default function SupplierManagementPage() {
                       e.target.value
                     )
                   }
-                  placeholder="Enter supplier name"
+                  placeholder="Nhập tên nhà cung cấp"
                   className="mt-2 h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -500,7 +473,7 @@ export default function SupplierManagementPage() {
               <div>
                 <Label
                   htmlFor="taxcode"
-                  text="Tax Code"
+                  text="Mã số thuế"
                 />
 
                 <input
@@ -511,7 +484,26 @@ export default function SupplierManagementPage() {
                       e.target.value
                     )
                   }
-                  placeholder="Enter tax code"
+                  placeholder="Nhập mã số thuế"
+                  className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="representative"
+                  text="Người đại diện"
+                />
+
+                <input
+                  value={form.representative}
+                  onChange={(e) =>
+                    handleChange(
+                      "representative",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Nhập tên người đại diện"
                   className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -531,7 +523,7 @@ export default function SupplierManagementPage() {
                       e.target.value
                     )
                   }
-                  placeholder="Enter email"
+                  placeholder="Nhập email"
                   className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -539,7 +531,7 @@ export default function SupplierManagementPage() {
               <div>
                 <Label
                   htmlFor="phone"
-                  text="Phone"
+                  text="Số điện thoại"
                   required
                 />
 
@@ -551,7 +543,7 @@ export default function SupplierManagementPage() {
                       e.target.value
                     )
                   }
-                  placeholder="Enter phone"
+                  placeholder="Nhập số điện thoại"
                   className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -578,7 +570,7 @@ export default function SupplierManagementPage() {
               <div className="md:col-span-2">
                 <Label
                   htmlFor="address"
-                  text="Address"
+                  text="Địa chỉ"
                 />
 
                 <input
@@ -589,7 +581,7 @@ export default function SupplierManagementPage() {
                       e.target.value
                     )
                   }
-                  placeholder="Enter address"
+                  placeholder="Nhập địa chỉ"
                   className="h-12 w-full rounded-xl border border-gray-200 px-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -598,7 +590,7 @@ export default function SupplierManagementPage() {
               <div className="md:col-span-2">
                 <Label
                   htmlFor="logo"
-                  text="Supplier Logo"
+                  text="Logo nhà cung cấp"
                 />
 
                 <input
@@ -623,7 +615,7 @@ export default function SupplierManagementPage() {
               <div className="md:col-span-2">
                 <Label
                   htmlFor="note"
-                  text="Note"
+                  text="Ghi chú"
                 />
 
                 <textarea
@@ -635,7 +627,7 @@ export default function SupplierManagementPage() {
                     )
                   }
                   rows={4}
-                  placeholder="Enter note"
+                  placeholder="Nhập ghi chú"
                   className="w-full rounded-2xl border border-gray-200 p-4 outline-none dark:border-white/10 dark:bg-navy-800 dark:text-white"
                 />
               </div>
@@ -649,7 +641,7 @@ export default function SupplierManagementPage() {
                 }
                 className="rounded-xl border border-gray-200 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-100"
               >
-                Cancel
+                Hủy
               </button>
 
               <button
@@ -657,8 +649,8 @@ export default function SupplierManagementPage() {
                 className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
               >
                 {editingSupplier
-                  ? "Update Supplier"
-                  : "Create Supplier"}
+                  ? "Cập nhật"
+                  : "Thêm mới"}
               </button>
             </div>
           </div>
@@ -675,7 +667,7 @@ export default function SupplierManagementPage() {
             {/* HEADER */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Supplier Detail
+                Chi tiết nhà cung cấp
               </h2>
 
               <button
@@ -693,7 +685,7 @@ export default function SupplierManagementPage() {
               <div className="flex flex-col items-center gap-4">
                 <div className="flex h-32 w-32 items-center justify-center rounded-2xl border border-gray-200 bg-white p-5">
                   <img
-                    src={previewSupplier.logo}
+                    src={previewSupplier.logo || "/placeholder.png"}
                     alt={previewSupplier.name}
                     className="h-full w-full object-contain"
                   />
@@ -714,7 +706,7 @@ export default function SupplierManagementPage() {
                 <div className="rounded-2xl border border-gray-200 p-4 dark:border-white/10">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-500">
                     <Phone className="h-4 w-4" />
-                    Phone
+                    Số điện thoại
                   </div>
 
                   <p className="mt-2 text-gray-900 dark:text-white">
@@ -725,7 +717,7 @@ export default function SupplierManagementPage() {
                 <div className="rounded-2xl border border-gray-200 p-4 dark:border-white/10">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-500">
                     <Building2 className="h-4 w-4" />
-                    Tax Code
+                    Mã số thuế
                   </div>
 
                   <p className="mt-2 text-gray-900 dark:text-white">
@@ -733,10 +725,21 @@ export default function SupplierManagementPage() {
                   </p>
                 </div>
 
+                <div className="rounded-2xl border border-gray-200 p-4 dark:border-white/10">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-500">
+                    <User className="h-4 w-4" />
+                    Người đại diện
+                  </div>
+
+                  <p className="mt-2 text-gray-900 dark:text-white">
+                    {previewSupplier.representative || "-"}
+                  </p>
+                </div>
+
                 <div className="rounded-2xl border border-gray-200 p-4 dark:border-white/10 md:col-span-2">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-500">
                     <MapPin className="h-4 w-4" />
-                    Address
+                    Địa chỉ
                   </div>
 
                   <p className="mt-2 text-gray-900 dark:text-white">
@@ -762,7 +765,7 @@ export default function SupplierManagementPage() {
 
                 <div className="rounded-2xl border border-gray-200 p-4 dark:border-white/10 md:col-span-2">
                   <div className="text-sm font-semibold text-gray-500">
-                    Note
+                    Ghi chú
                   </div>
 
                   <p className="mt-2 text-gray-900 dark:text-white">

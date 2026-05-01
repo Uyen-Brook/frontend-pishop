@@ -134,6 +134,7 @@ export interface ProductUpdateRequest {
   supplierId?: number;
   categoryId?: number;
 }
+
 // giỏ hàng item
 export interface CartItem {
   basePrice: number;
@@ -169,7 +170,8 @@ export type ProductStatus =
 
 //  order status type
 export type OrderStatus =
-  | "PENDDING"
+  | "PENDING"
+  | "CONFIRMATION" // ✅ thêm mới
   | "PAID"
   | "CONFIRMED"
   | "SHIPPING"
@@ -178,7 +180,8 @@ export type OrderStatus =
 
 // Order status
 export const OrderStatusLabel: Record<OrderStatus, string> = {
-  PENDDING: "Chờ thanh toán",
+  PENDING: "Chờ thanh toán",
+  CONFIRMATION:"Chờ xác nhận",// ✅ thêm mới
   PAID: "Đã thanh toán",
   CONFIRMED: "Đã xác nhận",
   SHIPPING: "Đang giao hàng",
@@ -188,13 +191,23 @@ export const OrderStatusLabel: Record<OrderStatus, string> = {
 // payment method
 export type PaymentMethod =
   | "COD"
-  | "BANK_TRANSFER"
-  | "MOMO"
-  | "VNPAY";
+  | "BANK";
+  export const PaymentMethodLabel : Record<PaymentMethod, string> = {
+    COD: "Thanh toán bằng tiền mặt",
+    BANK: "Thanh toán thông qua ngân hàng",
+  };
 export type PayStatus =
   | "UNPAID"
   | "PAID"
   | "REFUNDED";
+
+  export const PayStatusLabel : Record<PayStatus, string>={
+    UNPAID: "Chưa thanh toán",
+    PAID: " Đã thanh toán",
+    REFUNDED: "Hoàn tiền"
+
+  }
+
 export type TransactionStatus =
   | "SUCCESS"
   | "FAILED"
@@ -240,6 +253,7 @@ export interface SupplierRequest {
   address?: string;
   note?: string;
   website?: string;
+  representative?: string;
 }
 // nhàcung cấp 
 export interface SupplierResponse {
@@ -249,6 +263,7 @@ export interface SupplierResponse {
   taxcode?: string;
   phone?: string;
   address?: string;
+  representative?: string;
 }
 // nhà cung cấp
 export interface SupplierDetailResponse {
@@ -261,4 +276,16 @@ export interface SupplierDetailResponse {
   address?: string;
   note?: string;
   website?: string;
+  representative?: string;
+}
+
+// phân trang
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
 }

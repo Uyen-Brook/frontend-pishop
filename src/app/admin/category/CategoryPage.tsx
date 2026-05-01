@@ -1,43 +1,49 @@
+"use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Card from "../../../components/card/Card";
 import Label from "../../../components/field/LabelField";
 import Select from "../../../components/select/Select";
-import { MdAdd, MdDelete, MdEdit, MdSearch } from "react-icons/md";
-
-interface Category {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  image: string;
-  note: string;
-  createdAt: string;
-}
-
-const mockCategories: Category[] = [
-  {
-    id: 1,
-    name: "Laptop",
-    description: "Danh mục laptop",
-    icon: "💻",
-    image: "https://via.placeholder.com/100",
-    note: "High-end",
-    createdAt: "2026-04-25",
-  },
-  {
-    id: 2,
-    name: "Phone",
-    description: "Danh mục điện thoại",
-    icon: "📱",
-    image: "https://via.placeholder.com/100",
-    note: "Best seller",
-    createdAt: "2026-04-26",
-  },
-];
+import { CategoryService, CategoryResponse, CategoryRequest } from "../../../service/admin/CategoryService";
+import { MdAdd, MdDelete, MdEdit, MdSearch, MdLaptop, MdPhone, MdHeadphones, MdWatch, MdCamera,
+   MdHome, MdSports, MdChildCare, MdBusiness, MdRestaurant, MdHealthAndSafety, MdPets,
+    MdOutlineShoppingBag, MdGames, MdBook, MdMusicNote, MdMovie, MdDevices, MdComputer, 
+    MdPhoneIphone, MdTabletMac, MdKeyboard, MdMouse, MdMonitor, MdSpeaker, MdHeadset, 
+    MdWifi, MdBluetooth, MdCloudUpload, MdCloudDownload, MdLock, MdKey, MdFingerprint, 
+    MdPerson, MdPeople, MdStar, MdFavorite,  MdSchool, MdCelebration, MdCake, MdShoppingCart,
+     MdStore, MdWarehouse, MdFactory, MdNature, MdPark, MdForest, MdWaterDrop, MdCloud,
+      MdThunderstorm, MdWbSunny, MdNightsStay, MdTerrain, MdLocationOn, MdMap, MdPublic,
+       MdLanguage, MdSignalWifi4Bar, MdSignalCellular4Bar, MdRouter, MdStorage, MdBackup, 
+       MdSecurity, MdAccountBalance, MdCreditCard, MdSavings, MdAttachMoney, MdWork, MdEmojiEvents,
+        MdSportsEsports, MdFitnessCenter, MdLocalGroceryStore, MdFastfood, MdLocalDrink, MdLocalCafe, MdLocalBar, MdHotel, MdFlight, MdTrain,  MdDirectionsBike,
+         MdDirectionsWalk, MdLocalShipping, MdLocalTaxi, MdLocalHospital, MdLocalPharmacy, MdLocalPolice, MdLocalFireDepartment, MdAccessible, MdSpa, MdLocalFlorist, MdPets as MdPetsIcon, MdOutlinePets } from "react-icons/md";
+import { FaLaptop, FaMobile, FaHeadphones, FaCamera, FaHome, FaCar, FaBaby, FaBuilding, FaUtensils,
+   FaHeartbeat, FaPaw, FaSpa, FaShoppingBag, FaGamepad, FaBook, FaMusic, FaFilm, FaPlane, FaTrain,
+    FaBus, FaBicycle, FaWalking, FaTruck, FaTaxi, FaHospital, FaPills,FaFire, FaSchool, 
+    FaBook as FaBookLibrary, FaLandmark, FaBirthdayCake, FaGift, FaHeart, FaStar, FaTrophy,
+     FaBriefcase, FaMoneyBill, FaUniversity, FaCreditCard as FaCreditCardAlt, FaPiggyBank,
+      FaShoppingCart as FaShoppingCartAlt, FaCashRegister, FaStore, FaStoreAlt, 
+      FaWarehouse as FaWarehouseAlt, FaIndustry, FaSeedling, FaTree, FaLeaf, FaWater,
+       FaCloud as FaCloudAlt, FaBolt, FaSun, FaMoon, FaMountain, FaMapMarker, 
+       FaMap as FaMapAlt, FaGlobe, FaLanguage, FaWifi as FaWifiAlt, FaBluetooth as FaBluetoothB,
+        FaSignal, FaHdd, FaCloudUploadAlt, FaCloudDownloadAlt, FaDatabase, FaLock as FaLockAlt, 
+        FaUnlock as FaUnlockAlt, FaKey as FaKeyAlt, FaFingerprint as FaFingerprintAlt, FaUser,
+         FaUsers, FaUserFriends, FaWheelchair, FaRestroom, FaMale, FaFemale, FaTransgender, FaDog,
+          FaCat, FaFish, FaCrow, FaDove, FaDragon, FaSpider, FaHorse, FaKiwiBird, FaOtter, FaFrog,
+           FaPaw as FaPawPrint, FaBone, FaCookie, FaIceCream, FaPizzaSlice, FaHamburger, FaHotdog,
+            FaCoffee, FaBeer, FaWineGlass, FaGlassCheers, FaHotel as FaHotelAlt, FaBed, FaConciergeBell, FaSuitcase, FaPassport, FaIdCard, FaEnvelope, FaPhone as FaPhoneAlt, FaFax, FaPrint, FaCopy, FaSave, FaFile, FaFolder, FaFilePdf, FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileImage, FaFileVideo, FaFileAudio, FaFileArchive, FaFileCode, FaFileAlt, FaFileImport, FaFileExport, FaUpload, FaDownload, FaShare, FaShareAlt, FaLink, FaUnlink,  FaExternalLinkAlt, FaAnchor, FaLink as FaChain, FaHashtag, FaAt,FaAsterisk, FaPercent, FaPlus, FaMinus, FaTimes, FaDivide, FaEquals, FaNotEqual, FaLessThan, FaGreaterThan, FaLessThanEqual, FaGreaterThanEqual, FaInfinity, FaEllipsisH, FaEllipsisV, FaCaretUp, FaCaretDown, FaCaretLeft, FaCaretRight, FaCaretSquareUp, FaCaretSquareDown,
+            FaCaretSquareLeft, FaCaretSquareRight, FaSort, FaSortUp, FaSortDown, FaSortAlphaDown, FaSortAlphaUp, FaSortNumericDown, FaSortNumericUp, FaSortAmountDown, FaSortAmountUp, FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowCircleUp, FaArrowCircleDown, FaArrowCircleLeft, FaArrowCircleRight, FaAngleUp, FaAngleDown, FaAngleLeft, FaAngleRight, FaAngleDoubleUp, FaAngleDoubleDown, FaAngleDoubleLeft, FaAngleDoubleRight,
+             FaChevronUp, FaChevronDown, FaChevronLeft, FaChevronRight, FaChevronCircleUp,
+              FaChevronCircleDown, FaChevronCircleLeft, FaChevronCircleRight, FaExpand, 
+              FaCompress, FaExpandArrowsAlt, FaCompressArrowsAlt,FaLevelUpAlt, FaLevelDownAlt, FaExchangeAlt,
+               FaRandom, FaSync, FaSyncAlt, FaSpinner, FaRedo, FaUndo, FaRedoAlt, FaUndoAlt,FaHistory,
+                FaClock, FaHourglass, FaHourglassHalf, FaHourglassStart, FaHourglassEnd, FaCalendar, 
+                FaCalendarAlt, FaCalendarCheck, FaCalendarTimes, FaCalendarDay, FaCalendarWeek, 
+                FaCalendarMinus, FaCalendarPlus } from "react-icons/fa";
 
 const CategoryPage: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
 
@@ -47,15 +53,34 @@ const CategoryPage: React.FC = () => {
 
   const [openModal, setOpenModal] = useState(false);
 
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<CategoryResponse | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     icon: "",
-    image: "",
     note: "",
   });
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  // Load categories from API
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const data = await CategoryService.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      alert("Lỗi khi tải danh mục");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   const filteredCategories = useMemo(() => {
     const filtered = categories.filter((category) =>
@@ -69,11 +94,10 @@ const CategoryPage: React.FC = () => {
           : b.name.localeCompare(a.name);
       }
 
+      // Sort by ID as fallback for date
       return sortOrder === "asc"
-        ? new Date(a.createdAt).getTime() -
-            new Date(b.createdAt).getTime()
-        : new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime();
+        ? a.id - b.id
+        : b.id - a.id;
     });
 
     return filtered;
@@ -84,10 +108,10 @@ const CategoryPage: React.FC = () => {
       name: "",
       description: "",
       icon: "",
-      image: "",
       note: "",
     });
-
+    setImageFile(null);
+    setImagePreview("");
     setEditingCategory(null);
   };
 
@@ -96,60 +120,87 @@ const CategoryPage: React.FC = () => {
     setOpenModal(true);
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: CategoryResponse) => {
     setEditingCategory(category);
 
     setFormData({
       name: category.name,
-      description: category.description,
-      icon: category.icon,
-      image: category.image,
-      note: category.note,
+      description: category.description || "",
+      icon: category.icon || "",
+      note: category.note || "",
     });
-
+    setImagePreview(category.image || "");
     setOpenModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
-      alert("Tên category không được để trống");
+      alert("Tên danh mục không được để trống");
       return;
     }
 
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((item) =>
-          item.id === editingCategory.id
-            ? {
-                ...item,
-                ...formData,
-              }
-            : item
-        )
-      );
-    } else {
-      const newCategory: Category = {
-        id: Date.now(),
-        ...formData,
-        createdAt: new Date().toISOString(),
+    try {
+      const request: CategoryRequest = {
+        name: formData.name,
+        description: formData.description,
+        icon: formData.icon,
+        note: formData.note,
       };
 
-      setCategories((prev) => [...prev, newCategory]);
-    }
+      if (editingCategory) {
+        await CategoryService.update(editingCategory.id, request, imageFile || undefined);
+        alert("Cập nhật danh mục thành công!");
+      } else {
+        await CategoryService.create(request, imageFile || undefined);
+        alert("Thêm danh mục thành công!");
+      }
 
-    setOpenModal(false);
-    resetForm();
+      await loadCategories();
+      setOpenModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving category:", error);
+      alert("Có lỗi xảy ra khi lưu danh mục");
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     const confirmDelete = window.confirm(
-      "Bạn có chắc chắn muốn xóa category này không?"
+      "Bạn có chắc chắn muốn xóa danh mục này không?"
     );
 
     if (!confirmDelete) return;
 
-    setCategories((prev) => prev.filter((item) => item.id !== id));
+    try {
+      await CategoryService.delete(id);
+      alert("Xóa danh mục thành công!");
+      await loadCategories();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      alert("Có lỗi xảy ra khi xóa danh mục");
+    }
   };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // // Helper function to render icon based on value
+  // const renderIcon = (iconValue: string) => {
+  //   const iconOption = ICON_OPTIONS.find(opt => opt.value === iconValue);
+  //   if (iconOption) {
+  //     return <span className="text-2xl">{iconOption.icon}</span>;
+  //   }
+  //   return <span className="text-2xl">{iconValue}</span>;
+  // };
 
   return (
     <div className="w-full p-6">
@@ -253,10 +304,6 @@ const CategoryPage: React.FC = () => {
                   Note
                 </th>
 
-                <th className="px-5 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
-                  Created Date
-                </th>
-
                 <th className="px-5 py-4 text-center text-sm font-bold text-gray-600 dark:text-gray-300">
                   Actions
                 </th>
@@ -281,9 +328,9 @@ const CategoryPage: React.FC = () => {
                     />
                   </td>
 
-                  <td className="px-5 py-4 text-2xl">
-                    {category.icon}
-                  </td>
+                  {/* <td className="px-5 py-4 text-2xl">
+                    {renderIcon(category.icon || "")}
+                  </td> */}
 
                   <td className="px-5 py-4 font-semibold text-navy-700 dark:text-white">
                     {category.name}
@@ -295,10 +342,6 @@ const CategoryPage: React.FC = () => {
 
                   <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {category.note}
-                  </td>
-
-                  <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {new Date(category.createdAt).toLocaleDateString()}
                   </td>
 
                   <td className="px-5 py-4">
@@ -324,10 +367,10 @@ const CategoryPage: React.FC = () => {
               {filteredCategories.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={7}
                     className="py-10 text-center text-gray-500 dark:text-gray-400"
                   >
-                    Không có dữ liệu category
+                    Không có dữ liệu danh mục
                   </td>
                 </tr>
               )}
@@ -379,18 +422,17 @@ const CategoryPage: React.FC = () => {
               <div>
                 <Label htmlFor="icon" text="Icon" />
 
-                <input
-                  id="icon"
-                  type="text"
+                {/* <Select
+                  // options={ICON_OPTIONS}
                   value={formData.icon}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setFormData({
                       ...formData,
-                      icon: e.target.value,
+                      icon: value as string,
                     })
                   }
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white"
-                />
+                  placeholder="-- Chọn icon --"
+                /> */}
               </div>
 
               <div className="lg:col-span-2">
@@ -411,20 +453,24 @@ const CategoryPage: React.FC = () => {
               </div>
 
               <div className="lg:col-span-2">
-                <Label htmlFor="image" text="Image URL" />
+                <Label htmlFor="image" text="Hình ảnh" />
 
-                <input
-                  id="image"
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      image: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white"
-                />
+                <div className="flex items-center gap-4">
+                  <input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white"
+                  />
+                  {(imagePreview || editingCategory?.image) && (
+                    <img
+                      src={imagePreview || editingCategory?.image}
+                      alt="Preview"
+                      className="h-14 w-14 rounded-xl object-cover"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="lg:col-span-2">

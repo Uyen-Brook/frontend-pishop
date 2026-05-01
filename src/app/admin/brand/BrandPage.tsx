@@ -1,97 +1,38 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import Card from "../../../components/card/Card";
-import StatsCard from "../../../components/card/StatsCard";
 import SearchInput from "../../../components/search/SearchInput";
 import Select from "../../../components/select/Select";
+import Label from "../../../components/field/LabelField";
 
 import {
   Building2,
   Globe,
-  Package,
   Plus,
-  Pencil,
-  Trash2,
-  Eye,
-  EyeOff,
+  X,
 } from "lucide-react";
+import { MdAdd, MdDelete, MdEdit } from "react-icons/md";
+
+import { brandService, BrandRequest, BrandResponse } from "../../../service/admin/BrandService";
 
 // ============================================
 // TYPES
 // ============================================
 
-interface Brand {
-  id: number;
-  name: string;
-  image: string;
-  website: string;
-  note: string;
-  totalProducts: number;
-
-  // soft delete
-  deleted: boolean;
+interface Brand extends BrandResponse {
+  deleted?: boolean;
 }
-
-// ============================================
-// MOCK DATA
-// ============================================
-
-const initialBrands: Brand[] = [
-  {
-    id: 1,
-    name: "Apple",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
-    website: "https://apple.com",
-    note: "Premium electronics brand",
-    totalProducts: 120,
-    deleted: false,
-  },
-
-  {
-    id: 2,
-    name: "Samsung",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
-    website: "https://samsung.com",
-    note: "Mobile and electronics",
-    totalProducts: 90,
-    deleted: false,
-  },
-
-  {
-    id: 3,
-    name: "Nike",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-    website: "https://nike.com",
-    note: "Sportswear brand",
-    totalProducts: 75,
-    deleted: true,
-  },
-];
 
 // ============================================
 // FILTER OPTIONS
 // ============================================
 
 const statusOptions = [
-  {
-    label: "All",
-    value: "all",
-  },
-
-  {
-    label: "Active",
-    value: "active",
-  },
-
-  {
-    label: "Deleted",
-    value: "deleted",
-  },
+  { label: "Tất cả", value: "all" },
+  { label: "Đang hoạt động", value: "active" },
+  { label: "Đã xóa", value: "deleted" },
 ];
 
 // ============================================
@@ -103,14 +44,48 @@ export default function AdminBrandsPage() {
   // STATES
   // ============================================
 
-  const [brands, setBrands] =
-    useState<Brand[]>(initialBrands);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
 
-  const [search, setSearch] =
-    useState("");
+  // Modal states
+  const [openModal, setOpenModal] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
 
-  const [status, setStatus] =
-    useState("all");
+  // Form state
+  const [formData, setFormData] = useState<BrandRequest>({
+    name: "",
+    website: "",
+    note: "",
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // ============================================
+  // EFFECTS
+  // ============================================
+
+  useEffect(() => {
+    loadBrands();
+  }, []);
+
+  // ============================================
+  // API CALLS
+  // ============================================
+
+  const loadBrands = async () => {
+    try {
+      setLoading(true);
+      const res = await brandService.getAll();
+      setBrands(res.map((b) => ({ ...b, deleted: false })));
+    } catch (error) {
+      console.error("Cannot load brands", error);
+      alert("Không thể tải danh sách thương hiệu");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ============================================
   // FILTER
@@ -135,43 +110,96 @@ export default function AdminBrandsPage() {
   }, [brands, search, status]);
 
   // ============================================
-  // ACTIONS
+  // FORM HANDLERS
   // ============================================
 
-  const handleSoftDelete = (id: number) => {
-    setBrands((prev) =>
-      prev.map((brand) =>
-        brand.id === id
-          ? {
-              ...brand,
-              deleted: !brand.deleted,
-            }
-          : brand
-      )
-    );
+  const resetForm = () => {
+    setFormData({ name: "", website: "", note: "" });
+    setImageFile(null);
+    setImagePreview(null);
+    setEditingBrand(null);
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setOpenModal(true);
+  };
+
+  const handleOpenEdit = (brand: Brand) => {
+    setEditingBrand(brand);
+    setFormData({
+      name: brand.name,
+      website: brand.website || "",
+      note: brand.note || "",
+    });
+    setImagePreview(brand.image || null);
+    setImageFile(null);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    resetForm();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      alert("Vui lòng nhập tên thương hiệu");
+      return;
+    }
+
+    try {
+      const data: BrandRequest = {
+        name: formData.name,
+        website: formData.website,
+        note: formData.note,
+        image: imageFile || undefined,
+      };
+
+      if (editingBrand) {
+        await brandService.update(editingBrand.id, data);
+        alert("Cập nhật thương hiệu thành công!");
+      } else {
+        await brandService.create(data);
+        alert("Thêm thương hiệu thành công!");
+      }
+
+      await loadBrands();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Save error", error);
+      alert("Có lỗi xảy ra khi lưu thương hiệu");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa thương hiệu này?");
+    if (!confirmDelete) return;
+
+    try {
+      await brandService.delete(id);
+      alert("Xóa thương hiệu thành công!");
+      await loadBrands();
+    } catch (error) {
+      console.error("Delete error", error);
+      alert("Không thể xóa thương hiệu");
+    }
   };
 
   // ============================================
   // STATS
   // ============================================
 
-  const totalBrands =
-    brands.length;
-
-  const activeBrands =
-    brands.filter((b) => !b.deleted)
-      .length;
-
-  const deletedBrands =
-    brands.filter((b) => b.deleted)
-      .length;
-
-  const totalProducts =
-    brands.reduce(
-      (sum, brand) =>
-        sum + brand.totalProducts,
-      0
-    );
+  const totalBrands = brands.length;
+  const activeBrands = brands.filter((b) => !b.deleted).length;
+  const deletedBrands = brands.filter((b) => b.deleted).length;
 
   // ============================================
   // RENDER
@@ -186,73 +214,22 @@ export default function AdminBrandsPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Brand Management
+            Quản lý thương hiệu
           </h1>
 
           <p className="mt-1 text-sm text-gray-500">
-            Manage product brands and suppliers
+            Quản lý các thương hiệu sản phẩm
           </p>
         </div>
 
         <button
-          className="
-            flex items-center gap-2
-            rounded-xl
-            bg-blue-600
-            px-5 py-3
-            font-semibold
-            text-white
-            transition
-            hover:bg-blue-700
-          "
+          onClick={handleOpenAdd}
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
         >
-          <Plus className="h-5 w-5" />
-
-          Add Brand
+          <MdAdd className="h-5 w-5" />
+          Thêm thương hiệu
         </button>
       </div>
-
-      {/* ============================================ */}
-      {/* STATS */}
-      {/* ============================================ */}
-
-      {/* <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard
-          icon={Building2}
-          title="Total Brands"
-          value={String(totalBrands)}
-          growth="+12.5%"
-          trend="up"
-          color="bg-blue-100 text-blue-600"
-        />
-
-        <StatsCard
-          icon={Eye}
-          title="Active Brands"
-          value={String(activeBrands)}
-          growth="+8.1%"
-          trend="up"
-          color="bg-green-100 text-green-600"
-        />
-
-        <StatsCard
-          icon={EyeOff}
-          title="Deleted Brands"
-          value={String(deletedBrands)}
-          growth="-2.5%"
-          trend="down"
-          color="bg-red-100 text-red-600"
-        />
-
-        <StatsCard
-          icon={Package}
-          title="Products"
-          value={String(totalProducts)}
-          growth="+18.2%"
-          trend="up"
-          color="bg-purple-100 text-purple-600"
-        />
-      </div> */}
 
       {/* ============================================ */}
       {/* FILTER */}
@@ -264,8 +241,8 @@ export default function AdminBrandsPage() {
           <div className="w-full lg:w-[320px]">
             <SearchInput
               value={search}
-              onChange={setSearch}
-              placeholder="Search brands..."
+              onChange={(value) => setSearch(value)}
+              placeholder="Tìm kiếm thương hiệu..."
             />
           </div>
 
@@ -292,11 +269,11 @@ export default function AdminBrandsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Brands List
+                Danh sách thương hiệu
               </h2>
 
               <p className="mt-1 text-sm text-gray-500">
-                Showing {filteredBrands.length} brands
+                Hiển thị {filteredBrands.length} thương hiệu
               </p>
             </div>
           </div>
@@ -306,30 +283,22 @@ export default function AdminBrandsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             {/* HEAD */}
-            <thead className="bg-gray-50 dark:bg-gray-800">
+            <thead className="bg-gray-50 dark:bg-navy-900">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Brand
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  ID
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Thương hiệu
+                </th>
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
                   Website
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Products
+                <th className="px-3 py-4 text-left text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Trạng thái
                 </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Note
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-
-                <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Actions
+                <th className="px-3 py-4 text-center text-sm font-bold text-gray-600 dark:text-gray-300">
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -339,133 +308,76 @@ export default function AdminBrandsPage() {
               {filteredBrands.map((brand) => (
                 <tr
                   key={brand.id}
-                  className="transition hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="border-b border-gray-100 transition hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/5"
                 >
-                  {/* BRAND */}
-                  <td className="whitespace-nowrap px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="
-                          flex h-14 w-14 items-center justify-center
-                          rounded-xl border border-gray-200 bg-white p-2
-                        "
-                      >
-                        <img
-                          src={brand.image}
-                          alt={brand.name}
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
+                  {/* ID */}
+                  <td className="px-3 py-4">
+                    <p className="text-sm text-gray-500">#{brand.id}</p>
+                  </td>
 
+                  {/* BRAND */}
+                  <td className="px-3 py-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={brand.image || "/placeholder.png"}
+                        alt={brand.name}
+                        className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1"
+                      />
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-white">
                           {brand.name}
                         </h4>
-
-                        <p className="text-sm text-gray-500">
-                          ID: #{brand.id}
-                        </p>
                       </div>
                     </div>
                   </td>
 
                   {/* WEBSITE */}
-                  <td className="px-6 py-5">
-                    <a
-                      href={brand.website}
-                      target="_blank"
-                      className="
-                        flex items-center gap-2
-                        text-sm font-medium text-blue-600
-                        hover:underline
-                      "
-                    >
-                      <Globe className="h-4 w-4" />
-
-                      Visit
-                    </a>
-                  </td>
-
-                  {/* PRODUCTS */}
-                  <td className="px-6 py-5">
-                    <span
-                      className="
-                        rounded-full
-                        bg-blue-100
-                        px-3 py-1
-                        text-xs font-semibold text-blue-600
-                      "
-                    >
-                      {brand.totalProducts} products
-                    </span>
-                  </td>
-
-                  {/* NOTE */}
-                  <td className="max-w-[250px] px-6 py-5 text-sm text-gray-600">
-                    {brand.note}
+                  <td className="px-3 py-4">
+                    {brand.website ? (
+                      <a
+                        href={brand.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </a>
+                    ) : (
+                      <span className="text-sm text-gray-400">-</span>
+                    )}
                   </td>
 
                   {/* STATUS */}
-                  <td className="px-6 py-5">
+                  <td className="px-3 py-4">
                     <span
-                      className={`
-                        rounded-full
-                        px-3 py-1
-                        text-xs font-semibold
-
-                        ${
-                          brand.deleted
-                            ? "bg-red-100 text-red-600"
-                            : "bg-green-100 text-green-600"
-                        }
-                      `}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        brand.deleted
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-600"
+                      }`}
                     >
-                      {brand.deleted
-                        ? "Deleted"
-                        : "Active"}
+                      {brand.deleted ? "Đã xóa" : "Đang hoạt động"}
                     </span>
                   </td>
 
                   {/* ACTIONS */}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-3 py-4">
+                    <div className="flex items-center justify-center gap-2">
                       {/* EDIT */}
                       <button
-                        className="
-                          rounded-lg
-                          p-2
-                          text-blue-600
-                          transition
-                          hover:bg-blue-50
-                        "
+                        onClick={() => handleOpenEdit(brand)}
+                        className="rounded-lg bg-yellow-400 p-2 text-white transition hover:opacity-80"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <MdEdit className="text-lg" />
                       </button>
 
-                      {/* SOFT DELETE */}
+                      {/* DELETE */}
                       <button
-                        onClick={() =>
-                          handleSoftDelete(
-                            brand.id
-                          )
-                        }
-                        className={`
-                          rounded-lg
-                          p-2
-                          transition
-
-                          ${
-                            brand.deleted
-                              ? "text-green-600 hover:bg-green-50"
-                              : "text-red-600 hover:bg-red-50"
-                          }
-                        `}
+                        onClick={() => handleDelete(brand.id)}
+                        className="rounded-lg bg-red-500 p-2 text-white transition hover:opacity-80"
                       >
-                        {brand.deleted ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
+                        <MdDelete className="text-lg" />
                       </button>
                     </div>
                   </td>
@@ -479,17 +391,113 @@ export default function AdminBrandsPage() {
         {filteredBrands.length === 0 && (
           <div className="py-16 text-center">
             <Building2 className="mx-auto h-12 w-12 text-gray-300" />
-
             <h3 className="mt-4 text-lg font-semibold text-gray-700">
-              No brands found
+              Không tìm thấy thương hiệu
             </h3>
-
             <p className="mt-2 text-sm text-gray-500">
-              Try changing filters or adding a new brand
+              Thử thay đổi bộ lọc hoặc thêm thương hiệu mới
             </p>
           </div>
         )}
       </Card>
+
+      {/* MODAL */}
+      {openModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <Card extra="w-full max-w-lg p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-navy-700 dark:text-white">
+                {editingBrand ? "Chỉnh sửa thương hiệu" : "Thêm thương hiệu mới"}
+              </h3>
+              <button onClick={handleCloseModal} className="text-2xl text-gray-500 hover:text-gray-700">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Name */}
+              <div>
+                <Label htmlFor="name" text="Tên thương hiệu" required />
+                <input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ví dụ: Apple"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white"
+                />
+              </div>
+
+              {/* Website */}
+              <div>
+                <Label htmlFor="website" text="Website" />
+                <input
+                  id="website"
+                  type="text"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://example.com"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white"
+                />
+              </div>
+
+              {/* Note */}
+              <div>
+                <Label htmlFor="note" text="Ghi chú" />
+                <textarea
+                  id="note"
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  placeholder="Ghi chú về thương hiệu..."
+                  rows={3}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-brand-500 dark:border-white/10 dark:bg-navy-800 dark:text-white resize-none"
+                />
+              </div>
+
+              {/* Image */}
+              <div>
+                <Label htmlFor="image" text="Logo thương hiệu" />
+                <div
+                  onClick={() => document.getElementById("brandImageInput")?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition min-h-[120px]"
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" className="h-24 w-auto object-contain" />
+                  ) : (
+                    <>
+                      <Plus className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-xs text-gray-400 text-center">Click để tải logo</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  id="brandImageInput"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </div>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={handleCloseModal}
+                className="rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-white/10 dark:text-white"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSave}
+                className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+              >
+                {editingBrand ? "Cập nhật" : "Thêm mới"}
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

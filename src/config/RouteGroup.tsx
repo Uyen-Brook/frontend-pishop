@@ -15,12 +15,13 @@ import { ROUTES } from "./routes";
 
 import type { ReactNode } from "react";
 import AdminProductsPage from "../app/admin/product/ProductPage";
-import OrderManagement from "../app/admin/order/Order";
+// import OrderManagement from "../app/admin/order/OrderPage";
 import AdminBrandsPage from "../app/admin/brand/BrandPage";
 import SupplierManagementPage from "../app/admin/supplier/AdminSuplierPage";
 import CategoryPage from "../app/admin/category/CategoryPage";
 import AccountPage from "../app/admin/account/AccountPage";
 import ProfileAddressPage from "../app/customer/profile/address/AddressManagement";
+import OrderPage from "../app/admin/order/OrderPage";
 
 
 export interface AppRoute {
@@ -47,7 +48,7 @@ export const userRoutes: AppRoute[] = [
 export const adminRoutes: AppRoute[] = [
   { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
   { path: ROUTES.ADMIN_PRODUCTS, element: <AdminProductsPage /> },
-  { path: ROUTES.ADMIN_ORDERS, element: <OrderManagement /> },
+  { path: ROUTES.ADMIN_ORDERS, element: <OrderPage /> },
   { path: ROUTES.ADMIN_BRANDS, element: <AdminBrandsPage /> },
   { path: ROUTES.ADMIN_SUPPLIER, element: <SupplierManagementPage /> },
   { path: ROUTES.ADMIN_CATEGORY, element: <CategoryPage/> },

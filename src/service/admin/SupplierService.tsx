@@ -11,7 +11,7 @@ export const SupplierService = {
   async create(
     request: SupplierRequest,
     logo?: File
-  ): Promise<SupplierResponse> {
+  ): Promise<SupplierDetailResponse> {
     const formData = new FormData();
 
     Object.entries(request).forEach(([key, value]) => {
@@ -44,7 +44,7 @@ export const SupplierService = {
     id: number,
     request: SupplierRequest,
     logo?: File
-  ): Promise<SupplierResponse> {
+  ): Promise<SupplierDetailResponse> {
     const formData = new FormData();
 
     Object.entries(request).forEach(([key, value]) => {
@@ -84,7 +84,7 @@ export const SupplierService = {
   /**
    * GET ALL
    */
-  async getAll(): Promise<SupplierResponse[]> {
+  async getAll(): Promise<SupplierDetailResponse[]> {
     const response = await apiClient.get(BASE_URL);
 
     return response.data;
@@ -95,7 +95,7 @@ export const SupplierService = {
    */
   async search(
     keyword?: string
-  ): Promise<SupplierResponse[]> {
+  ): Promise<SupplierDetailResponse[]> {
     const response = await apiClient.get(
       `${BASE_URL}/search`,
       {

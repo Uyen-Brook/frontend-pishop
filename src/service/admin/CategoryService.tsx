@@ -2,7 +2,7 @@
 import { apiClient } from "../api";
 
 export interface CategoryRequest {
-  name?: string;
+  name: string;
   description?: string;
   icon?: string;
   note?: string;
@@ -19,6 +19,33 @@ export interface CategoryResponse {
 
 const BASE_URL = "/admin/categories";
 
+const buildFormData = (
+  request: CategoryRequest,
+  image?: File
+): FormData => {
+  const formData = new FormData();
+
+  formData.append("name", request.name);
+
+  if (request.description) {
+    formData.append("description", request.description);
+  }
+
+  if (request.icon) {
+    formData.append("icon", request.icon);
+  }
+
+  if (request.note) {
+    formData.append("note", request.note);
+  }
+
+  if (image) {
+    formData.append("image", image);
+  }
+
+  return formData;
+};
+
 export const CategoryService = {
   /**
    * CREATE
@@ -27,19 +54,9 @@ export const CategoryService = {
     request: CategoryRequest,
     image?: File
   ): Promise<CategoryResponse> {
-    const formData = new FormData();
+    const formData = buildFormData(request, image);
 
-    Object.entries(request).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    if (image) {
-      formData.append("image", image);
-    }
-
-    const response = await apiClient.post(
+    const response = await apiClient.post<CategoryResponse>(
       BASE_URL,
       formData,
       {
@@ -60,19 +77,9 @@ export const CategoryService = {
     request: CategoryRequest,
     image?: File
   ): Promise<CategoryResponse> {
-    const formData = new FormData();
+    const formData = buildFormData(request, image);
 
-    Object.entries(request).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    if (image) {
-      formData.append("image", image);
-    }
-
-    const response = await apiClient.put(
+    const response = await apiClient.put<CategoryResponse>(
       `${BASE_URL}/${id}`,
       formData,
       {
@@ -89,7 +96,7 @@ export const CategoryService = {
    * DELETE
    */
   async delete(id: number): Promise<string> {
-    const response = await apiClient.delete(
+    const response = await apiClient.delete<string>(
       `${BASE_URL}/${id}`
     );
 
@@ -100,7 +107,9 @@ export const CategoryService = {
    * GET ALL
    */
   async getAll(): Promise<CategoryResponse[]> {
-    const response = await apiClient.get(BASE_URL);
+    const response = await apiClient.get<CategoryResponse[]>(
+      BASE_URL
+    );
 
     return response.data;
   },
@@ -111,7 +120,7 @@ export const CategoryService = {
   async search(
     keyword?: string
   ): Promise<CategoryResponse[]> {
-    const response = await apiClient.get(
+    const response = await apiClient.get<CategoryResponse[]>(
       `${BASE_URL}/search`,
       {
         params: { keyword },
@@ -127,7 +136,7 @@ export const CategoryService = {
   async getById(
     id: number
   ): Promise<CategoryResponse> {
-    const response = await apiClient.get(
+    const response = await apiClient.get<CategoryResponse>(
       `${BASE_URL}/${id}`
     );
 

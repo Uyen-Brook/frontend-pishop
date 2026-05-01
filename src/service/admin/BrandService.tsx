@@ -7,6 +7,7 @@ import { apiClient } from "../api";
 export interface BrandRequest {
   name: string;
   website?: string;
+  note?: string;
   image?: File;
 }
 
@@ -14,6 +15,7 @@ export interface BrandResponse {
   id: number;
   name: string;
   website?: string;
+  note?: string;
   image?: string;
 }
 
@@ -34,6 +36,10 @@ export const brandService = {
 
     if (data.website) {
       formData.append("website", data.website);
+    }
+
+    if (data.note) {
+      formData.append("note", data.note);
     }
 
     if (data.image) {
@@ -63,6 +69,10 @@ export const brandService = {
 
     if (data.website) {
       formData.append("website", data.website);
+    }
+
+    if (data.note) {
+      formData.append("note", data.note);
     }
 
     if (data.image) {
