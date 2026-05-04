@@ -14,6 +14,9 @@ import "./CheckoutPage.css";
 interface LocationState {
   selectedItems: CartItem[];
 }
+interface VNPayResponse {
+  paymentUrl: string;
+}
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -306,7 +309,7 @@ const [formData, setFormData] = useState({
   return (
     <div className="min-h-screen bg-white">
       <div className="checkout-container">
-        <div className="checkout-left">
+        <div className="bg-white p-[30px] rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <AddressSection
             formData={formData}
             errors={errors}

@@ -1,5 +1,6 @@
 import { apiClient } from "../api";
 import { useAuthStore } from "../../store/authStore";
+import axios from "axios";
 
 export interface OrderItem {
   productName: string;
@@ -38,6 +39,9 @@ export interface CreateOrderResponse {
   id: number;
   status: string;
   message?: string;
+}
+interface VNPayResponse {
+  paymentUrl: string;
 }
 
 // Mock data
@@ -128,18 +132,36 @@ export const orderService = {
     }
   },
 
-  async submitOrder(orderTotal: number, orderInfo: string): Promise<string | null> {
+  async submitOrder(
+    orderTotal: number,
+    orderInfo: string
+  ): Promise<string | null> {
+
     try {
-      const response = await apiClient.post<string>(`/user/orders/submitOrder`, null, {
-        params: {
-          amount: orderTotal,
-          orderInfo: orderInfo,
-        },
-      });
-      return response.data || null;
+
+      const response =
+        await apiClient.post<VNPayResponse>(
+          "/submitOrder",
+          null,
+          {
+            params: {
+              amount: orderTotal,
+              orderInfo: orderInfo,
+            },
+          }
+        );
+
+      return response.data.paymentUrl || null;
+
     } catch (error) {
-      console.error("Error submitting order for payment:", error);
+
+      console.error(
+        "Error submitting order for payment:",
+        error
+      );
+
       throw error;
     }
-  },
+  }
+
 }

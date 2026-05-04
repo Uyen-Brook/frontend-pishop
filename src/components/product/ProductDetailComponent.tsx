@@ -173,9 +173,10 @@
 //   );
 // };
 // export default ProductDetailComponent;
+import React from "react";
 import { useState, useEffect } from "react";
 import { productService } from "../../service/custommer/productService";
-import type { ProductDetail } from "../../types/index";
+import type { ProductResponse } from "../../types/index";
 import ProductImage from "./ProductImage";
 
 type Props = {
@@ -183,7 +184,7 @@ type Props = {
 };
 
 const ProductDetailComponent = ({ id }: Props) => {
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -383,7 +384,7 @@ const ProductDetailComponent = ({ id }: Props) => {
         </div>
 
         {/* tab content */}
-        {activeTab === "spec" && (
+        {/* {activeTab === "spec" && (
           
           <div className="grid grid-cols-2 gap-8">
             <div>
@@ -429,7 +430,89 @@ const ProductDetailComponent = ({ id }: Props) => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
+        {/* tab content */}
+{activeTab === "spec" && (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    {/* Specification Table */}
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <table className="w-full">
+        <tbody>
+          {product.specification &&
+            Object.entries(product.specification)
+              .map(([key, value], index) => {
+                // Nested object
+                if (typeof value === "object" && value !== null) {
+                  return (
+                    <React.Fragment key={index}>
+                      {/* Category Header */}
+                      <tr className="bg-blue-50">
+                        <td
+                          colSpan={2}
+                          className="px-5 py-3 text-base font-bold text-blue-700"
+                        >
+                          {key}
+                        </td>
+                      </tr>
+
+                      {/* Nested Rows */}
+                      {Object.entries(
+                        value as Record<string, string>
+                      ).map(([subKey, subValue], subIndex) => (
+                        <tr
+                          key={`${index}-${subIndex}`}
+                          className="even:bg-gray-50 hover:bg-blue-50 transition-colors"
+                        >
+                          <td className="w-1/3 bg-gray-50 px-5 py-4 font-medium text-gray-700">
+                            {subKey}
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-gray-600">
+                            {String(subValue)}
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                }
+
+                // Flat value
+                return (
+                  <tr
+                    key={index}
+                    className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="w-1/3 bg-gray-50 px-5 py-4 font-medium text-gray-700">
+                      {key}
+                    </td>
+
+                    <td className="px-5 py-4 text-sm text-gray-600">
+                      {String(value)}
+                    </td>
+                  </tr>
+                );
+              })}
+        </tbody>
+      </table>
+    </div>
+
+    {/* Description */}
+   <div>
+              <h3 className="font-semibold mb-2">
+                Master the Digital Era
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                {product.description}
+              </p>
+              
+
+              <div className="bg-gray-100 border-l-4 border-red-500 p-3 text-sm italic">
+                "This device is designed for modern professionals."
+              </div>
+            </div>
+  </div>
+)}
 
         {activeTab === "desc" && (
           <p className="text-sm text-gray-600">

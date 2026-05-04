@@ -429,7 +429,7 @@ const AddNewProduct: React.FC<AddProductFormProps> = ({ isOpen, initialProduct, 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-            <Card extra="w-full max-w-5xl p-6 my-8">
+            <Card extra="w-full max-w-5xl pt-30 my-8">
                 {/* Page Header */}
                 <div className="flex items-start justify-between mb-6">
                     <div>

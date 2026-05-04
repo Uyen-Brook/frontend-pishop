@@ -5,6 +5,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  padding-top: 50px;
   background-color: #f9f9f9;
   min-height: 100vh;
 }
@@ -154,7 +155,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: 80px;
 }
 
 .checkout-right h2 {

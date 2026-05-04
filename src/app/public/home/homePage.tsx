@@ -160,7 +160,7 @@ export default function HomePage() {
   // UI
   // ============================
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-7xl mx-auto px-4 pt-15">
 
       {/* MOBILE MENU BUTTON */}
       <button

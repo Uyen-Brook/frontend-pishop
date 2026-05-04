@@ -144,7 +144,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pt-16">
         {/* MAIN LAYOUT */}
 
         {cart.items.length === 0 && (

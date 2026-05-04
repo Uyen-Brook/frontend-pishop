@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../../components/layout/custommer/header/Header";
 import { productService } from "../../../service/custommer/productService";
 import { useCartStore } from "../../../store/CartStore";
-import type { ProductDetail } from "../../../types/index";
+import type { ProductResponse } from "../../../types/index";
 import ProductDetailComponent from "../../../components/product/ProductDetailComponent";
 import "./ProductDetail.css";
 import { FaArrowLeft, FaShoppingCart, FaHeart, FaStar } from "react-icons/fa";
@@ -14,7 +14,7 @@ export default function ProductDetailPage() {
   if (!id) return <div>Not found</div>;
   const productId = Number(id);
   const navigate = useNavigate();
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [product, setProduct] = useState<ProductResponse | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"specs" | "description" | "reviews">("specs");
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -25,7 +25,7 @@ export default function ProductDetailPage() {
     const fetchProduct = async () => {
       try {
         if (id) {
-          const data = await productService.getProductDetail(parseInt(id));
+          const data = await productService.getById(parseInt(id));
           setProduct(data);
           if (data?.thumbnail) {
             setSelectedImage(data.thumbnail);
