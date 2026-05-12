@@ -92,7 +92,7 @@ export const CartService = {
       await Promise.all(
         localItems.map((item) =>
           apiClient.post(
-            `${API_BASE_URL}/cart/${accountId}/add?productId=${item.productId}&quantity=${item.quantity}`
+            `${API_BASE_URL}/user/cart/${accountId}/add?productId=${item.productId}&quantity=${item.quantity}`
           )
         )                                                                                                               
       );
@@ -112,7 +112,7 @@ export const CartService = {
   async getCartByAccountId(_accountId: number): Promise<Cart> {
     return handleAuthAction(
       async (accountId) => {
-        const response = await apiClient.get(`${API_BASE_URL}/cart/${accountId}`, {
+        const response = await apiClient.get(`${API_BASE_URL}/user/cart/${accountId}`, {
           headers: getAuthHeaders(),
         });
         return response.data as Cart;
@@ -150,7 +150,7 @@ export const CartService = {
     return handleAuthAction(
       async (accountId) => {
         await apiClient.post(
-          `${API_BASE_URL}/cart/${accountId}/add?productId=${productId}&quantity=${quantity}`,
+          `${API_BASE_URL}/user/cart/${accountId}/add?productId=${productId}&quantity=${quantity}`,
           {},
           { headers: getAuthHeaders() }
         );
@@ -167,7 +167,7 @@ export const CartService = {
     return handleAuthAction(
       async (accountId) => {
         await apiClient.delete(
-          `${API_BASE_URL}/cart/${accountId}/remove/${productId}`,
+          `${API_BASE_URL}/user/cart/${accountId}/remove/${productId}`,
           { headers: getAuthHeaders() }
         );
         console.log("Xóa khỏi giỏ hàng thành công (backend)");
@@ -183,7 +183,7 @@ export const CartService = {
     return handleAuthAction(
       async (accountId) => {
         await apiClient.put(
-          `${API_BASE_URL}/cart/${accountId}/update/${productId}/${quantity}`,
+          `${API_BASE_URL}/user/cart/${accountId}/update/${productId}/${quantity}`,
           {},
           { headers: getAuthHeaders() }
         );

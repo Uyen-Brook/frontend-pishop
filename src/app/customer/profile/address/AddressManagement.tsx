@@ -17,7 +17,7 @@ import Select from '../../../../components/select/Select';
 import locationService, {
   Province,
   Ward,
-} from '../../../../service/custommer/locationService';
+} from '../../../../service/public/locationService';
 
 import {
   Address,
@@ -208,50 +208,59 @@ useEffect(() => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-            <MapPin className="w-6 h-6 text-blue-600" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <MapPin className="w-7 h-7 text-white" />
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Address Management
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Sổ địa chỉ
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Quản lý địa chỉ giao hàng của bạn
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-medium transition-all active:scale-95"
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-2xl font-medium transition-all shadow-lg shadow-blue-500/30 active:scale-95"
         >
           <Plus className="w-5 h-5" />
-          Add New Address
+          Thêm địa chỉ mới
         </button>
       </div>
 
       {/* Address List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-10 text-gray-500">
-            Đang tải địa chỉ...
+          <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Đang tải địa chỉ...</p>
           </div>
         ) : addresses.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
-            <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <div className="bg-white rounded-3xl p-12 text-center shadow-sm border-2 border-dashed border-gray-200">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <MapPin className="w-10 h-10 text-gray-400" />
+            </div>
 
-            <h3 className="text-xl font-medium text-gray-600 mb-2 dark:text-white">
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">
               Chưa có địa chỉ nào
             </h3>
 
-            <p className="text-gray-500 mb-6">
-              Thêm địa chỉ giao hàng để dễ dàng mua sắm hơn
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              Thêm địa chỉ giao hàng để quá trình mua sắm và vận chuyển diễn ra nhanh chóng hơn
             </p>
 
             <button
               onClick={handleOpenAdd}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-medium transition-all shadow-lg shadow-blue-500/30"
             >
+              <Plus className="w-5 h-5" />
               Thêm địa chỉ đầu tiên
             </button>
           </div>
@@ -259,75 +268,78 @@ useEffect(() => {
           addresses.map((address) => (
             <div
               key={address.id}
-              className={`border rounded-2xl p-6 transition-all duration-200 ${address.isDefault
-                ? 'border-red-200 bg-red-50 shadow-sm'
-                : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+              className={`bg-white rounded-2xl p-6 transition-all duration-300 ${address.isDefault
+                ? 'border-2 border-blue-500 shadow-lg shadow-blue-500/10'
+                : 'border border-gray-200 hover:border-blue-300 hover:shadow-md'
                 }`}
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-6">
                 <div className="flex gap-4 flex-1">
                   <div
-                    className={`mt-1 p-2 rounded-xl ${address.isDefault
-                      ? 'bg-red-100'
+                    className={`mt-1 p-3 rounded-2xl flex-shrink-0 ${address.isDefault
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600'
                       : 'bg-gray-100'
                       }`}
                   >
                     {address.isDefault ? (
-                      <MapPin className="w-6 h-6 text-red-500" />
+                      <MapPin className="w-6 h-6 text-white" />
                     ) : (
                       <Building2 className="w-6 h-6 text-gray-500" />
                     )}
                   </div>
 
-                  <div className="space-y-1 flex-1">
+                  <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-semibold text-lg text-gray-900 dark:text-white">
+                      <span className="font-semibold text-lg text-gray-900">
                         {address.fullName}
                       </span>
 
                       {address.isDefault && (
-                        <span className="px-3 py-1 text-xs font-medium bg-red-500 text-white rounded-full">
+                        <span className="px-3 py-1 text-xs font-semibold bg-blue-500 text-white rounded-full">
                           MẶC ĐỊNH
                         </span>
                       )}
                     </div>
 
-                    <p className="text-gray-600 dark:text-gray-300">
+                    <p className="text-gray-600 font-medium">
                       {address.phone}
                     </p>
 
-                    <p className="text-gray-700 dark:text-gray-200">
+                    <p className="text-gray-700">
                       {address.specificAddress}
                     </p>
 
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-gray-500 text-sm">
                       {address.provinceName}, {address.wardName}
                     </p>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-1">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => handleEdit(address)}
-                    className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all text-sm font-medium"
                   >
-                    <Pencil className="w-5 h-5" />
+                    <Pencil className="w-4 h-4" />
+                    Sửa
                   </button>
 
                   <button
                     onClick={() => handleDelete(address.id)}
-                    className="p-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
+                    Xóa
                   </button>
 
                   {!address.isDefault && (
                     <button
                       onClick={() => handleSetDefault(address.id)}
-                      className="p-3 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                      className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all text-sm font-medium"
                     >
-                      <Star className="w-5 h-5" />
+                      <Star className="w-4 h-4" />
+                      Mặc định
                     </button>
                   )}
                 </div>
@@ -339,26 +351,35 @@ useEffect(() => {
 
       {/* Modal */}
       {openModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-navy-900 w-full max-w-2xl rounded-3xl p-6 relative">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-8 relative shadow-2xl">
             {/* Close */}
             <button
               onClick={handleCloseModal}
-              className="absolute top-4 right-4 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10"
+              className="absolute top-6 right-6 p-2 rounded-xl hover:bg-gray-100 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-500" />
             </button>
 
-            <h2 className="text-2xl font-bold mb-6 dark:text-white">
-              {isEdit
-                ? 'Cập nhật địa chỉ'
-                : 'Thêm địa chỉ mới'}
-            </h2>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {isEdit
+                  ? 'Cập nhật địa chỉ'
+                  : 'Thêm địa chỉ mới'}
+              </h2>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <InputField
-                  label="Họ và tên"
+                <Label
+                  htmlFor="fullName"
+                  text="Họ và tên"
+                  required
+                />
+                <input
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) =>
@@ -367,18 +388,18 @@ useEffect(() => {
                       fullName: e.target.value,
                     }))
                   }
-                />
-
-                <input
-                  hidden
-                  value={formData.fullName}
-                  onChange={() => { }}
+                  placeholder="Nhập họ và tên"
+                  className="mt-2 flex h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 />
               </div>
 
               <div>
-                <InputField
-                  label="Số điện thoại"
+                <Label
+                  htmlFor="phone"
+                  text="Số điện thoại"
+                  required
+                />
+                <input
                   id="phone"
                   value={formData.phone}
                   onChange={(e) =>
@@ -387,11 +408,8 @@ useEffect(() => {
                       phone: e.target.value,
                     }))
                   }
-                />
-                <input
-                  hidden
-                  value={formData.phone}
-                  onChange={() => { }}
+                  placeholder="Nhập số điện thoại"
+                  className="mt-2 flex h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 />
               </div>
             </div>
@@ -414,7 +432,7 @@ useEffect(() => {
                   }))
                 }
                 placeholder="Số nhà, tên đường..."
-                className="mt-2 flex h-12 w-full rounded-xl border border-gray-200 bg-white p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                className="mt-2 flex h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
               />
             </div>
 
@@ -445,7 +463,7 @@ useEffect(() => {
             </div>
 
             {/* Ward */}
-            <div>
+            <div className="mt-5">
               <Label
                 htmlFor="ward"
                 text="Phường / Xã"
@@ -453,54 +471,31 @@ useEffect(() => {
               />
 
               <Select
-  options={wards.map((item) => ({
-    value: item.code,
-    label: item.fullName,
-  }))}
-  value={formData.wardCode}
-  onChange={(value) => {
-    setFormData((prev) => ({
-      ...prev,
-      wardCode: String(value),
-    }));
-  }}
-  placeholder={
-    !formData.provinceCode
-      ? 'Vui lòng chọn tỉnh trước'
-      : loadingWards
-      ? 'Đang tải phường / xã...'
-      : 'Chọn phường / xã'
-  }
-  disabled={!formData.provinceCode || loadingWards}
-  className="justify-start"
-/>
-            </div>
-
-            {/* Controlled Inputs */}
-            <div className="hidden">
-              <input
-                value={formData.fullName}
-                onChange={(e) =>
+                options={wards.map((item) => ({
+                  value: item.code,
+                  label: item.fullName,
+                }))}
+                value={formData.wardCode}
+                onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
-                    fullName: e.target.value,
-                  }))
+                    wardCode: String(value),
+                  }));
+                }}
+                placeholder={
+                  !formData.provinceCode
+                    ? 'Vui lòng chọn tỉnh trước'
+                    : loadingWards
+                    ? 'Đang tải phường / xã...'
+                    : 'Chọn phường / xã'
                 }
-              />
-
-              <input
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    phone: e.target.value,
-                  }))
-                }
+                disabled={!formData.provinceCode || loadingWards}
+                className="justify-start"
               />
             </div>
 
             {/* Default Address */}
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mt-6 flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
               <input
                 id="isDefault"
                 type="checkbox"
@@ -511,13 +506,13 @@ useEffect(() => {
                     isDefault: e.target.checked,
                   }))
                 }
-                className="w-4 h-4 rounded border-gray-300"
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
 
               <Label
                 htmlFor="isDefault"
                 text="Đặt làm địa chỉ mặc định"
-                className="mb-0"
+                className="mb-0 text-gray-700"
               />
             </div>
 
@@ -525,14 +520,14 @@ useEffect(() => {
             <div className="mt-8 flex justify-end gap-3">
               <button
                 onClick={handleCloseModal}
-                className="px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10"
+                className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all"
               >
                 Hủy
               </button>
 
               <button
                 onClick={handleSubmit}
-                className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium transition-all shadow-lg shadow-blue-500/30"
               >
                 {isEdit ? 'Cập nhật' : 'Thêm mới'}
               </button>
@@ -541,15 +536,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Footer */}
-      <div className="mt-10 flex justify-center">
-        <div className="text-sm text-gray-500 bg-gray-100 px-6 py-3 rounded-2xl dark:bg-white/5 dark:text-gray-300">
-          Cần hỗ trợ? Gọi ngay{' '}
-          <span className="font-semibold text-blue-600">
-            0888 888 888
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

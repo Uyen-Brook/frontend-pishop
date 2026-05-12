@@ -1,296 +1,298 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import HomeSlider from "../../../components/layout/custommer/slider/HomeSlider";
+import FeaturedProducts from "../../../components/layout/custommer/feature/productFeature";
+import { categoryService } from "../../../service/public/categoryService";
+import { FeatureService } from "../../../service/public/FeatureService";
+import { Category, PageResponse, ProductSumaryResponse } from "../../../types/index";
 
-import ProductCard from "../../../components/product/ProductCard";
-import SideBarV2 from "../../../components/menu/menuCategory/SideBarV2";
-import BrandBar from "../../../components/menu/BrandBar";
+// Hook lazy fetch
+export function useLazyFetcher<T>(fetcher: () => Promise<T>) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(false);
 
-import { categoryService } from "../../../service/custommer/categoryService";
-import { productService } from "../../../service/custommer/productService";
-import { brandService } from "../../../service/custommer/brandService";
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !data) {
+        setLoading(true);
+        fetcher().then((res) => {
+          setData(res);
+          setLoading(false);
+        });
+      }
+    });
 
-import type {
-  Category,
-  ProductSumaryResponse,
-  Brand,
-} from "../../../types";
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [data, fetcher]);
 
-import "./homePage.css";
+  return { ref, data, loading };
+}
 
 export default function HomePage() {
+  // Lazy load categories
+  const { ref: catRef, data: categories, loading: catLoading } = useLazyFetcher(() =>
+    categoryService.getAll()
+  );
 
-  // ============================
-  // STATE
-  // ============================
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
+  // Lazy load newest products
+  const { ref: newestRef, data: newestProducts, loading: newestLoading } =
+    useLazyFetcher(() =>
+      FeatureService.getTopNewestProducts({ page: 0, size: 8, sort: "createAt,desc" })
+    );
 
-  const [products, setProducts] =
-    useState<ProductSumaryResponse[]>([]);
+  // Lazy load best selling products
+  const { ref: sellingRef, data: sellingProducts, loading: sellingLoading } =
+    useLazyFetcher(() =>
+      FeatureService.getTopBestSellingProducts({ page: 0, size: 8, sort: "create_at,desc" })
+    );
+   // top khuyến mãi
+    const { ref: promoRef, data: promoProducts, loading: promoLoading } =
+    useLazyFetcher(() =>
+      FeatureService.getTopBestSellingProducts({ page: 0, size: 8, sort: "create_at,desc" })
+    );
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<number | null>(null);
-
-  const [selectedBrand, setSelectedBrand] =
-    useState<number | null>(null);
-
-  const [isLoading, setIsLoading] =
-    useState(false);
-
-  const [isMenuOpen, setIsMenuOpen] =
-    useState(false);
-
-  // ============================
-  // PAGINATION (ONLY PRODUCT)
-  // ============================
-  const [page, setPage] = useState(0);
-  const size = 8;
-
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-
-  // ============================
-  // LOAD CATEGORY + BRAND (NO PAGE)
-  // ============================
-  useEffect(() => {
-
-    const fetchData = async () => {
-
-      try {
-
-        const [cats, brs] = await Promise.all([
-          categoryService.getAll(),
-          brandService.getAll(),
-        ]);
-
-        setCategories(cats ?? []);
-        setBrands(brs ?? []);
-
-      } catch (error) {
-        console.error("Load category/brand error:", error);
-      }
-    };
-
-    fetchData();
-
-  }, []);
-
-  // ============================
-  // RESET PAGE WHEN FILTER CHANGE
-  // ============================
-  useEffect(() => {
-    setPage(0);
-  }, [selectedCategory, selectedBrand]);
-
-  // ============================
-  // LOAD PRODUCTS (PAGINATION SAFE)
-  // ============================
-  useEffect(() => {
-
-    const fetchProducts = async () => {
-
-      setIsLoading(true);
-
-      try {
-
-        let response: any;
-
-        // CATEGORY + BRAND
-        if (selectedCategory && selectedBrand) {
-
-          response = await productService.filterProducts({
-            categoryId: selectedCategory,
-            brandId: selectedBrand,
-            page,
-            size,
-          });
-        }
-
-        // CATEGORY ONLY
-        else if (selectedCategory) {
-
-          response = await productService.getByCategory(
-            selectedCategory,
-            { page, size }
-          );
-        }
-
-        // BRAND ONLY
-        else if (selectedBrand) {
-
-          response = await productService.getByBrand(
-            selectedBrand,
-            { page, size }
-          );
-        }
-
-        // ALL
-        else {
-
-          response = await productService.getAll({
-            page,
-            size,
-          });
-        }
-
-        // ============================
-        // SAFE SET (TRÁNH UNDEFINED CRASH)
-        // ============================
-        setProducts(response?.content ?? []);
-        setTotalPages(response?.totalPages ?? 0);
-        setTotalElements(response?.totalElements ?? 0);
-
-      } catch (error) {
-
-        console.error("Load products error:", error);
-
-        setProducts([]);
-        setTotalPages(0);
-        setTotalElements(0);
-
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-
-  }, [selectedCategory, selectedBrand, page]);
-
-  // ============================
-  // UI
-  // ============================
   return (
-    <div className="max-w-7xl mx-auto px-4 pt-15">
+    <div className="max-w-7xl mx-auto px-4 pt-14">
+      {/* SLIDER */}
+      <HomeSlider />
 
-      {/* MOBILE MENU BUTTON */}
-      <button
-        className="lg:hidden mb-4 px-4 py-2 bg-blue-500 text-white rounded"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-      >
-        {isMenuOpen ? "Đóng Menu" : "Mở Menu"}
-      </button>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-
-        {/* SIDEBAR */}
-        <div className={`
-          ${isMenuOpen ? "block" : "hidden"}
-          lg:block
-          lg:w-60
-        `}>
-          <SideBarV2
-            categories={categories}
-            activeCategory={selectedCategory ?? undefined}
-            onSelect={(id) =>
-              setSelectedCategory(
-                selectedCategory === id ? null : id
-              )
-            }
-          />
+      <div className="max-w-7xl mx-auto px-6 py-12">
+       
+          {/* top khuyến mãi */}
+         <div ref={promoRef} className="mb-10">
+          {promoLoading && <div>Loading...</div>}
+          {promoProducts && (
+            <FeaturedProducts
+              title="Sản phẩm khuyến mãi"
+              fetcher={() =>
+                FeatureService.getTopDiscountProducts({ page: 0, size: 8})
+              }
+            />
+          )}
+        </div>
+        {/* TOP NEWEST */}
+        <div ref={newestRef} className="mb-10">
+          {newestLoading && <div>Loading...</div>}
+          {newestProducts && (
+            <FeaturedProducts
+              title="Sản phẩm mới nhất"
+              fetcher={() =>
+                FeatureService.getTopNewestProducts({ page: 0, size: 8})
+              }
+            />
+          )}
         </div>
 
-        {/* CONTENT */}
-        <div className="flex-1">
-
-          {/* BRAND BAR */}
-          <BrandBar
-            brands={brands}
-            selectedBrand={selectedBrand}
-            onSelect={(id) =>
-              setSelectedBrand(
-                selectedBrand === id ? null : id
-              )
-            }
-          />
-
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-4">
-
-            <h2 className="text-xl font-bold">
-
-              {selectedCategory && selectedBrand
-                ? `${categories.find(c => c.id === selectedCategory)?.name} - ${brands.find(b => b.id === selectedBrand)?.name}`
-                : selectedCategory
-                  ? categories.find(c => c.id === selectedCategory)?.name
-                  : selectedBrand
-                    ? brands.find(b => b.id === selectedBrand)?.name
-                    : "Tất cả sản phẩm"}
-            </h2>
-
-            <span className="text-sm text-gray-600">
-              {isLoading
-                ? "Đang tải..."
-                : `${totalElements ?? 0} sản phẩm`}
-            </span>
-          </div>
-
-          {/* PRODUCTS */}
-          {isLoading ? (
-
-            <div className="text-center py-10">
-              Loading...
-            </div>
-
-          ) : (products?.length ?? 0) > 0 ? (
-
-            <>
-              {/* GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                {products.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                  />
-                ))}
-              </div>
-
-              {/* PAGINATION */}
-              <div className="flex justify-center gap-2 mt-6">
-
-                <button
-                  disabled={page === 0}
-                  onClick={() => setPage(p => p - 1)}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
-                >
-                  Prev
-                </button>
-
-                {Array.from(
-                  { length: totalPages },
-                  (_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i)}
-                      className={`px-3 py-1 border rounded ${
-                        page === i
-                          ? "bg-blue-500 text-white"
-                          : ""
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  )
-                )}
-
-                <button
-                  disabled={page >= totalPages - 1}
-                  onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </>
-
-          ) : (
-
-            <div className="text-center py-10">
-              Không có sản phẩm
+        {/* TOP SELLING */}
+        <div ref={sellingRef} className="mb-10">
+          {sellingLoading && <div>Loading...</div>}
+          {sellingProducts && (
+            <FeaturedProducts
+              title="Sản phẩm bán chạy"
+              fetcher={() =>
+                FeatureService.getTopBestSellingProducts({ page: 0, size: 8})
+              }
+            />
+          )}
+        </div>
+ {/* CATEGORIES */}
+        <div ref={catRef} className="mb-10">
+          <h2 className="text-xl font-bold mb-4">Danh mục</h2>
+          {catLoading && <div>Loading...</div>}
+          {categories && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              {categories.map((c: Category) => (
+                <div key={c.id} className="p-4 bg-white shadow rounded-lg text-center">
+                  {c.name}
+                </div>
+              ))}
             </div>
           )}
         </div>
+        
       </div>
     </div>
   );
 }
+
+
+
+
+// import { useEffect, useState } from "react";
+// import { Link } from "react-router-dom";
+
+// import HomeSlider from "../../../components/layout/custommer/slider/HomeSlider";
+// import ProductCard from "../../../components/product/ProductCard";
+// import FeaturedProducts from "../../../components/layout/custommer/feature/productFeature";
+
+// import { categoryService } from "../../../service/public/categoryService";
+// import { PageResponse, ProductSumaryResponse, Brand, Category } from "../../../types/index";
+// import { FeatureService } from "../../../service/public/FeatureService"
+
+
+// export default function HomePage() {
+//   const [categories, setCategories] = useState<Category[]>([]);
+
+//   const [topSellingProducts, setTopSellingProducts] =
+//     useState<PageResponse<ProductSumaryResponse> | null>(null);
+
+//   const [topNewestProducts, setTopNewestProducts] =
+//     useState<PageResponse<ProductSumaryResponse> | null>(null);
+
+//   const [topBrandProducts, setTopBrandProducts] =
+//     useState<PageResponse<ProductSumaryResponse> | null>(null);
+
+//   const [topSupplierProducts, setTopSupplierProducts] =
+//     useState<PageResponse<ProductSumaryResponse> | null>(null);
+
+//   const [topCategoryProducts, setTopCategoryProducts] =
+//     useState<PageResponse<ProductSumaryResponse> | null>(null);
+
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         const [
+//           cats,
+//           topSelling,
+//           topNewest,
+//           topBrand,
+//           topSupplier,
+//           topCategory,
+//         ] = await Promise.all([
+//           categoryService.getAll(),
+
+//           FeatureService.getTopBestSellingProducts({
+//             page: 0,
+//             size: 8,
+//           }),
+
+//           FeatureService.getTopNewestProducts({
+//             page: 0,
+//             size: 8,
+//           }),
+
+//           // ⚠️ demo brandId = 1
+//           FeatureService.getTopSellingByBrand(1, {
+//             page: 0,
+//             size: 8,
+//           }),
+
+//           // ⚠️ demo supplierId = 1
+//           FeatureService.getTopSellingBySupplier(1, {
+//             page: 0,
+//             size: 8,
+//           }),
+
+//           // ⚠️ demo categoryId = 1
+//           FeatureService.getTopSellingByCategory(1, {
+//             page: 0,
+//             size: 8,
+//           }),
+//         ]);
+
+//         setCategories(cats);
+//         setTopSellingProducts(topSelling);
+//         setTopNewestProducts(topNewest);
+//         setTopBrandProducts(topBrand);
+//         setTopSupplierProducts(topSupplier);
+//         setTopCategoryProducts(topCategory);
+//       } catch (error) {
+//         console.error("Error fetching home data:", error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchData();
+//   }, []);
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center h-screen">
+//         Loading...
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="max-w-7xl mx-auto px-4 pt-14">
+//       {/* SLIDER */}
+//       <HomeSlider />
+
+//       <div className="max-w-7xl mx-auto px-6 py-12">
+//         {/* CATEGORIES */}
+//         <div className="mb-10">
+//           <h2 className="text-xl font-bold mb-4">Danh mục</h2>
+//           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+//             {categories.map((c) => (
+//               <div
+//                 key={c.id}
+//                 className="p-4 bg-white shadow rounded-lg text-center"
+//               >
+//                 {c.name}
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* TOP NEWEST */}
+//         <FeaturedProducts
+//           title="Sản phẩm mới nhất"
+//           fetcher={() =>
+//             FeatureService.getTopNewestProducts({
+//               page: 0,
+//               size: 8,
+//               sort: "createAt,desc",
+//             })
+//           }
+//         />
+
+//         {/* TOP SELLING */}
+//         {topSellingProducts && (
+//           <FeaturedProducts
+//             title="Sản phẩm bán chạy"
+//              fetcher={() =>
+//             FeatureService.getTopBestSellingProducts({
+//               page: 0,
+//               size: 8,
+//               sort: "create_at,desc",
+//             })
+//           }
+//           />
+//         )}
+
+//         {/* TOP BRAND */}
+//         {topBrandProducts && (
+//           <FeaturedProducts
+//             title="Sản phẩm khuyến mãi"
+//              fetcher={() =>
+//             FeatureService.getTopDiscountProducts({
+//               page: 0,
+//               size: 8,
+//               sort: "create_at,desc",
+//             })
+//           }
+//           />
+//         )}
+
+//         {/* TOP SUPPLIER */}
+//         {topSupplierProducts && (
+//           <FeaturedProducts
+//             title="Theo nhà cung cấp"
+//              fetcher={() =>
+//             FeatureService.getTopNewestProducts({
+//               page: 0,
+//               size: 8,
+//               sort: "createAt,desc",
+//             })
+//           }
+//           />
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// }

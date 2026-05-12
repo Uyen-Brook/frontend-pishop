@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuthStore } from "../../../store/authStore";
 import { ROUTES } from "../../../config/routes";
-import { API_BASE_URL } from "../../../config/env";
+import { authService } from "../../../service/public/authService";
 import "../../../styles/login.css";
 
 export default function LoginPage() {
@@ -27,40 +27,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
+      const data = await authService.login({
+        email,
+        password,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.token || data.accessToken;
-        
-        if (token) {
-          const decodedUser = login(token);
-          if (decodedUser?.role === "ADMIN") {
-            navigate(ROUTES.ADMIN_DASHBOARD);
-          } else {
-            navigate(ROUTES.HOME);
-          }
+      const token =
+        data.token || data.accessToken;
+
+      if (token) {
+        const decodedUser = login(token);
+
+        if (decodedUser?.role === "ADMIN") {
+          navigate(ROUTES.ADMIN_DASHBOARD);
         } else {
-          setError("Không nhận được token từ server");
+          navigate(ROUTES.PRODUCT);
         }
-      } else if (response.status === 403) {
-        setError("Tài khoản đã bị khóa");
-      } else if (response.status === 401) {
-        setError("Sai email hoặc mật khẩu");
       } else {
-        setError("Đăng nhập thất bại");
+        setError("Không nhận được token từ server");
       }
-    } catch (err: unknown) {
-      setError("Có lỗi xảy ra, thử lại sau");
+    } catch (err) {
+      setError(String(err));
     } finally {
       setLoading(false);
     }
@@ -74,7 +61,7 @@ export default function LoginPage() {
         <div className="login-header">
           <h1 className="brand-title">ĐĂNG NHẬP</h1>
           <p className="brand-subtitle">
-           Tham gia mua sắm ngay với PiShop
+            Tham gia mua sắm ngay với PiShop
           </p>
         </div>
 
@@ -139,7 +126,7 @@ export default function LoginPage() {
               Đăng ký ngay
             </a>
           </span>
-          </div>
+        </div>
       </div>
     </div>
   );

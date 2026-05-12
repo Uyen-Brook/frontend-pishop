@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CartItem } from "../../../types";
 import { ROUTES } from "../../../config/routes";
 import { useAuthStore } from "../../../store/authStore";
-import  { AddressResponse, CustomerAddressService} from "../../../service/user/CustomerAddressService";
-import locationService, { Province, Ward } from "../../../service/custommer/locationService";
-import { orderService, CreateOrderRequest } from  "../../../service/user/orderService";
+import { AddressResponse, CustomerAddressService } from "../../../service/user/CustomerAddressService";
+import locationService, { Province, Ward } from "../../../service/public/locationService";
+import { orderService, CreateOrderRequest } from "../../../service/user/orderService";
 import AddressSection from "../../../components/layout/custommer/checkout/AddressSection";
 import PaymentMethodSection from "../../../components/layout/custommer/checkout/PaymentMethodSection";
 import OrderSummary from "../../../components/layout/custommer/checkout/OrderSummary";
@@ -13,9 +13,6 @@ import "./CheckoutPage.css";
 
 interface LocationState {
   selectedItems: CartItem[];
-}
-interface VNPayResponse {
-  paymentUrl: string;
 }
 
 export default function CheckoutPage() {
@@ -25,21 +22,21 @@ export default function CheckoutPage() {
   const selectedItems = state?.selectedItems || [];
   const authUser = useAuthStore((state) => state.user);
 
-const [formData, setFormData] = useState({
-  fullName: "",
-  email: authUser?.email || "",
-  phone: "",
-  specificAddress: "",
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: authUser?.email || "",
+    phone: "",
+    specificAddress: "",
 
-  provinceCode: "",
-  wardCode: "",
+    provinceCode: "",
+    wardCode: "",
 
-  provinceName: "",
-  wardName: "",
+    provinceName: "",
+    wardName: "",
 
-  notes: "",
-  paymentMethod: "COD",
-});
+    notes: "",
+    paymentMethod: "COD",
+  });
 
   const [errors, setErrors] = useState<{
     [key: string]: string;
@@ -267,7 +264,7 @@ const [formData, setFormData] = useState({
         toProvinceCode: selectedProvince.code,
         toWardCode: selectedWard.code,
         toAddress: formData.specificAddress,
-        paymentMethod: formData.paymentMethod as "COD" |"BANK",
+        paymentMethod: formData.paymentMethod as "COD" | "BANK",
         items: selectedItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -279,24 +276,42 @@ const [formData, setFormData] = useState({
       const response = await orderService.createOrder(orderRequest);
 
       if (response) {
-        // Nếu chọn BANK (thanh toán VNPay) thì gọi API redirect đến VNPay
         if (formData.paymentMethod === "BANK") {
+
           try {
-            const vnpayUrl = await orderService.submitOrder(totalPayable, `Order_${response.id}`);
+
+            const vnpayUrl = await orderService.submitOrder(
+              response.id,
+              totalPayable,
+              `Order_${response.id}`
+            );
+
             if (vnpayUrl) {
               window.location.href = vnpayUrl;
               return;
             }
+
           } catch (paymentError) {
-            console.error("Error redirecting to VNPay:", paymentError);
-            alert("Có lỗi xảy ra khi chuyển sang thanh toán VNPay. Vui lòng thử lại!");
+
+            console.error(
+              "Error redirecting to VNPay:",
+              paymentError
+            );
+
+            alert(
+              "Có lỗi xảy ra khi chuyển sang thanh toán VNPay. Vui lòng thử lại!"
+            );
+
             setIsSubmitting(false);
             return;
           }
         }
+        // Nếu chọn BANK (thanh toán VNPay) thì gọi API redirect đến VNPay
+
+
 
         alert(`Đặt hàng thành công! Mã đơn hàng: ${response.id}`);
-        navigate(ROUTES.HOME);
+        navigate(ROUTES.PRODUCT);
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -307,7 +322,7 @@ const [formData, setFormData] = useState({
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="max-w-7xl mx-auto px-4 pt-10">
       <div className="checkout-container">
         <div className="bg-white p-[30px] rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <AddressSection

@@ -11,7 +11,7 @@ export default function PaymentMethodSection({
   onPaymentMethodChange,
 }: PaymentMethodSectionProps) {
   return (
-    <div className="payment-method-section bg-[#f9f9f9] rounded-xl ">
+    <div className="payment-method-section rounded-xl ">
       <div className="bg-white">
         <h3>Phương thức thanh toán</h3>
         <div className="payment-options">

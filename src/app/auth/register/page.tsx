@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/register.css";
 import { ROUTES } from "../../../config/routes";
-import { API_BASE_URL } from "../../../config/env";
+import { authService } from "../../../service/public/authService";
 export default function RegisterPage() {
   const navigate = useNavigate();
 
@@ -48,38 +48,23 @@ export default function RegisterPage() {
         password: formData.password,
       };
 
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const response = await authService.register(payload);
+      setSuccess(response.message || "Đăng ký thành công!");
+
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
       });
 
-      if (response.ok) {
-        const responseText = await response.text();
-        setSuccess(responseText || "Đăng ký thành công!");
-
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
-        });
-
-        // Redirect to login after 1.5s
-        setTimeout(() => {
-          navigate(ROUTES.LOGIN);
-        }, 1500);
-      } else if (response.status === 400) {
-        const errorText = await response.text();
-        setError(errorText || "Email đã tồn tại vui lòng đăng kí bằng email khác");
-      } else {
-        setError("Đăng ký thất bại, vui lòng thử lại");
-      }
-    } catch (err) {
-      setError("Có lỗi xảy ra, thử lại sau");
+      // Redirect to login after 1.5s
+      setTimeout(() => {
+        navigate(ROUTES.LOGIN);
+      }, 1500);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Có lỗi xảy ra, thử lại sau");
     } finally {
       setLoading(false);
     }

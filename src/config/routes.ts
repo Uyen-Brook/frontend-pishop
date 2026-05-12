@@ -26,5 +26,6 @@ export const ROUTES = {
   ADMIN_SUPPLIER: "/admin/supplier",
   ADMIN_CATEGORY: "/admin/category",
   ADMIN_ACCOUNT: "/admin/account",
-  ADMIN_SETTING: "/admin/setting"
+  ADMIN_SETTING: "/admin/setting",
+  ADMIN_SLIDER: "/admin/slider"
 };

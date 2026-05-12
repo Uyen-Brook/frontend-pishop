@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (user?.role === "ADMIN") {
       window.location.href = ROUTES.LOGIN;
     } else {
-      window.location.href = ROUTES.HOME;
+      window.location.href = ROUTES.PRODUCT;
     }
   };
 

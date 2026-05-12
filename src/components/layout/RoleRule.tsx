@@ -28,7 +28,7 @@ export function RoleRoute({
   if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} replace />;
 
   if (!user || !allowRoles.includes(user.role)) {
-    return <Navigate to={ROUTES.HOME} replace />;
+    return <Navigate to={ROUTES.PRODUCT} replace />;
   }
 
   return <>{children}</>;

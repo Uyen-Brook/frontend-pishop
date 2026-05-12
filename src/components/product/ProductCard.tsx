@@ -1,29 +1,18 @@
 import { Link } from "react-router-dom";
-import type { Product } from "../../types/index"
+import type { ProductSumaryResponse } from "../../types/index"
 import { useCartStore } from "../../store/CartStore";
 import "./ProductCard.css";
 import { useEffect } from "react";
-import { categoryService } from "../../service/custommer/categoryService";
+import { categoryService } from "../../service/public/categoryService";
 import { CartService } from "../../service/user/CartService";
 interface Props {
-  product: Product;
+  product: ProductSumaryResponse;
 }
 
 export default function ProductCard({ product }: Props) {
   const addToLocalCart = useCartStore((state) => state.addToLocalCart);
-  // useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     try {
-  //       const productId = 123;           
-  //       const quantity = 1;
-  //       const cartData = await CartService.addToCart(productId, quantity);
-  //       console.log("Cart data:", cartData);
-  //     } catch (error) {
-  //       console.error("Error fetching categories:", error);
-  //     }
-  //   };
-  //   fetchCategories();
-  // }, []);
+  // CHECK NGỪNG BÁN
+  const isDiscontinued = product.productStatus === "DISCONTINUED";
 
   const discountedPrice = product.discountType === "PERCENT"
     ? product.price * (1 - (product.discountValue || 0) / 100)
@@ -37,7 +26,7 @@ export default function ProductCard({ product }: Props) {
       ? Math.floor((((product.price - discountedPrice) / product.price) * 100))
       : 0;
 
-   const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
       await CartService.addToCart(product.id, 1);
@@ -45,12 +34,14 @@ export default function ProductCard({ product }: Props) {
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
-    }};
+    }
+  };
 
   return (
     <div className="product-card">
       {/* IMAGE SECTION */}
       <div className="product-image">
+         <Link to={`/product/${product.id}`}>
         <img
           src={product.thumbnail}
           alt={product.modelName}
@@ -74,6 +65,7 @@ export default function ProductCard({ product }: Props) {
         {product.quantity === 0 && (
           <span className="out-of-stock">Hết hàng</span>
         )}
+        </Link>
       </div>
 
       {/* INFO SECTION */}
@@ -114,18 +106,28 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* ADD TO CART BUTTON */}
-        <button
+        {/* <button
           className="add-to-cart"
           onClick={handleAddToCart}
           disabled={product.quantity === 0}
         >
           {product.quantity === 0 ? "Hết hàng" : "Thêm vào giỏ"}
+        </button> */}
+        <button
+          className={`add-to-cart ${isDiscontinued ? "disabled" : ""
+            }`}
+          onClick={handleAddToCart}
+          disabled={
+            product.quantity === 0 ||
+            isDiscontinued
+          }
+        >
+          {isDiscontinued
+            ? "Ngừng bán"
+            : product.quantity === 0
+              ? "Hết hàng"
+              : "Thêm vào giỏ"}
         </button>
-
-        {/* VIEW DETAIL BUTTON */}
-        <Link to={`/product/${product.id}`} className="view-detail">
-          Chi tiết
-        </Link>
       </div>
     </div>
   );

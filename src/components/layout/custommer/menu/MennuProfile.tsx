@@ -7,7 +7,7 @@ export const profileMenuData: MenuItem[] = [
   {
     name: "Đơn hàng hiện tại",
     icon: "MdOrder",
-    path: ROUTES.HOME,
+    path: ROUTES.PRODUCT,
   },
   {
     name: "Thông tin cá nhân",
@@ -39,12 +39,11 @@ const ProfileMenu = () => {
       navigate("/");
       return;
     }
-
     navigate(path);
   };
 
   return (
-    <ul className="bg-white rounded-lg shadow overflow-hidden">
+    <ul className="h-full bg-white rounded-lg shadow overflow-hidden">
       {profileMenuData.map((item) => (
         <ProfileMenuItem
           key={item.path}

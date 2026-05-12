@@ -21,9 +21,33 @@ export interface PaginationParams {
 export interface ProductFilterParams
   extends PaginationParams {
 
+  keyword?: string;
+
   categoryId?: number;
+
   brandId?: number;
+
   supplierId?: number;
+}
+
+// ============================
+// DEFAULT PAGINATION
+// ============================
+const DEFAULT_PAGE = 0;
+const DEFAULT_SIZE = 10;
+const DEFAULT_SORT = "createAt,desc";
+
+// ============================
+// BUILD PAGINATION PARAMS
+// ============================
+function buildPaginationParams(
+  params?: PaginationParams
+) {
+  return {
+    page: params?.page ?? DEFAULT_PAGE,
+    size: params?.size ?? DEFAULT_SIZE,
+    sort: params?.sort ?? DEFAULT_SORT,
+  };
 }
 
 // ============================
@@ -44,13 +68,9 @@ export const productService = {
         await apiClient.get<
           PageResponse<ProductSumaryResponse>
         >(
-          "/products",
+          "/public/products",
           {
-            params: {
-              page: params?.page ?? 0,
-              size: params?.size ?? 10,
-              sort: params?.sort ?? "id,desc",
-            },
+            params: buildPaginationParams(params),
           }
         );
 
@@ -78,7 +98,7 @@ export const productService = {
 
       const response =
         await apiClient.get<ProductResponse>(
-          `/product/${id}`
+          `/public/products/${id}`
         );
 
       return response.data;
@@ -91,6 +111,42 @@ export const productService = {
       );
 
       return null;
+    }
+  },
+
+  // ============================
+  // SEARCH PRODUCTS
+  // ============================
+  async searchProducts(
+    keyword: string,
+    params?: PaginationParams
+  ): Promise<PageResponse<ProductSumaryResponse>> {
+
+    try {
+
+      const response =
+        await apiClient.get<
+          PageResponse<ProductSumaryResponse>
+        >(
+          "/public/products/search",
+          {
+            params: {
+              keyword,
+              ...buildPaginationParams(params),
+            },
+          }
+        );
+
+      return response.data;
+
+    } catch (error) {
+
+      console.error(
+        "Không thể search products",
+        error
+      );
+
+      return emptyPage<ProductSumaryResponse>();
     }
   },
 
@@ -108,13 +164,9 @@ export const productService = {
         await apiClient.get<
           PageResponse<ProductSumaryResponse>
         >(
-          `/product/category/${categoryId}`,
+          `/public/products/category/${categoryId}`,
           {
-            params: {
-              page: params?.page ?? 0,
-              size: params?.size ?? 10,
-              sort: params?.sort ?? "id,desc",
-            },
+            params: buildPaginationParams(params),
           }
         );
 
@@ -145,13 +197,9 @@ export const productService = {
         await apiClient.get<
           PageResponse<ProductSumaryResponse>
         >(
-          `/product/brand/${brandId}`,
+          `/public/products/brand/${brandId}`,
           {
-            params: {
-              page: params?.page ?? 0,
-              size: params?.size ?? 10,
-              sort: params?.sort ?? "id,desc",
-            },
+            params: buildPaginationParams(params),
           }
         );
 
@@ -182,13 +230,9 @@ export const productService = {
         await apiClient.get<
           PageResponse<ProductSumaryResponse>
         >(
-          `/supplier/${supplierId}`,
+          `/public/products/supplier/${supplierId}`,
           {
-            params: {
-              page: params?.page ?? 0,
-              size: params?.size ?? 10,
-              sort: params?.sort ?? "id,desc",
-            },
+            params: buildPaginationParams(params),
           }
         );
 
@@ -214,21 +258,38 @@ export const productService = {
 
     try {
 
+      const params: any = {
+        page: filters.page ?? DEFAULT_PAGE,
+        size: filters.size ?? DEFAULT_SIZE,
+        sort: filters.sort ?? DEFAULT_SORT,
+      };
+
+      // keyword
+      if (filters.keyword) {
+        params.keyword = filters.keyword;
+      }
+
+      // brand
+      if (filters.brandId !== undefined) {
+        params.brandId = filters.brandId;
+      }
+
+      // category
+      if (filters.categoryId !== undefined) {
+        params.categoryId = filters.categoryId;
+      }
+
+      // supplier
+      if (filters.supplierId !== undefined) {
+        params.supplierId = filters.supplierId;
+      }
+
       const response =
         await apiClient.get<
           PageResponse<ProductSumaryResponse>
         >(
-          "/filter",
-          {
-            params: {
-              brandId: filters.brandId,
-              categoryId: filters.categoryId,
-              supplierId: filters.supplierId,
-              page: filters.page ?? 0,
-              size: filters.size ?? 10,
-              sort: filters.sort ?? "id,desc",
-            },
-          }
+          "/public/products/filter",
+          { params }
         );
 
       return response.data;
@@ -254,8 +315,8 @@ function emptyPage<T>(): PageResponse<T> {
     content: [],
     totalElements: 0,
     totalPages: 0,
-    size: 10,
-    number: 0,
+    size: DEFAULT_SIZE,
+    number: DEFAULT_PAGE,
     first: true,
     last: true,
   };

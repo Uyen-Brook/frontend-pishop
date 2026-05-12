@@ -8,44 +8,73 @@ import {
   PayStatus,
   PayStatusLabel,
 } from "../../../types/index";
-import { Search, Package, Truck, CheckCircle, XCircle, Clock, MapPin, Phone, User, CreditCard, Calendar, ChevronLeft, ChevronRight, Eye, Trash2, RefreshCw, Filter } from "lucide-react";
+import { Search, Package, Loader2, PackageSearch, BadgeCheck, RotateCcw, Truck, CheckCircle, XCircle, Clock, MapPin, Phone, User, CreditCard, Calendar, ChevronLeft, ChevronRight, Eye, Trash2, RefreshCw, Filter } from "lucide-react";
 
 /* ================= FLOW - GHN Style ================= */
 const nextStatusOptions = (status: OrderStatus): OrderStatus[] => {
   switch (status) {
     case "PENDING":
-      return ["PAID", "CANCELLED"];
-    case "CONFIRMATION":
-      return ["CONFIRMED", "CANCELLED"];
-    case "PAID":
       return ["CONFIRMED", "CANCELLED"];
 
     case "CONFIRMED":
-      return ["SHIPPING"];
+      return ["PROCESSING", "CANCELLED"];
+
+    case "PROCESSING":
+      return ["PREPARING", "CANCELLED"];
+
+    case "PREPARING":
+      return ["SHIPPING", "CANCELLED"];
 
     case "SHIPPING":
       return ["DELIVERED"];
+
+    case "DELIVERED":
+      return ["COMPLETED", "RETURNED"];
+
+    case "COMPLETED":
+      return []; // No actions allowed after completion
+
+    case "CANCELLED":
+      return []; // No actions allowed after cancellation
+
+    case "RETURNED":
+      return []; // No actions allowed after return
 
     default:
       return [];
   }
 };
-const timelineFlow: OrderStatus[] = [
+
+export const timelineFlow: OrderStatus[] = [
   "PENDING",
-  "CONFIRMATION",
-  "PAID",
   "CONFIRMED",
+  "PROCESSING",
+  "PREPARING",
   "SHIPPING",
   "DELIVERED",
+  "COMPLETED",
 ];
-const orderStatusConfig: Record<OrderStatus, { color: string; bg: string; icon: React.ElementType }> = {
+const orderStatusConfig: Record<
+  OrderStatus,
+  { color: string; bg: string; icon: React.ElementType }
+> = {
   PENDING: { color: "text-yellow-600", bg: "bg-yellow-100", icon: Clock },
-  CONFIRMATION: { color: "text-yellow-600", bg: "bg-yellow-100", icon: Clock },
-  PAID: { color: "text-blue-600", bg: "bg-blue-100", icon: CreditCard },
+
   CONFIRMED: { color: "text-indigo-600", bg: "bg-indigo-100", icon: Package },
+
+  PROCESSING: { color: "text-purple-600", bg: "bg-purple-100", icon: Loader2 },
+
+  PREPARING: { color: "text-cyan-600", bg: "bg-cyan-100", icon: PackageSearch },
+
   SHIPPING: { color: "text-orange-600", bg: "bg-orange-100", icon: Truck },
+
   DELIVERED: { color: "text-green-600", bg: "bg-green-100", icon: CheckCircle },
+
+  COMPLETED: { color: "text-emerald-600", bg: "bg-emerald-100", icon: BadgeCheck },
+
   CANCELLED: { color: "text-red-600", bg: "bg-red-100", icon: XCircle },
+
+  RETURNED: { color: "text-gray-600", bg: "bg-gray-100", icon: RotateCcw },
 };
 
 /* ================= PAGE ================= */
@@ -59,7 +88,7 @@ export default function OrderPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Date filters (tạm thời chưa dùng vì backend chưa hỗ trợ)
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -73,7 +102,7 @@ export default function OrderPage() {
   const [updateStatus, setUpdateStatus] = useState<OrderStatus | "">("");
   const [cancelReason, setCancelReason] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Load orders
   const loadOrders = async (currentPage: number = 0) => {
     try {
@@ -437,7 +466,7 @@ export default function OrderPage() {
 
             <div className="p-6 space-y-6">
               {/* TIMELINE - GHN STYLE */}
-              <OrderTimeline status={selected.orderStatus} />
+              <OrderTimeline status={selected.orderStatus} payStatus={selected.payStatus} />
 
               {/* INFO GRID */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -529,7 +558,10 @@ export default function OrderPage() {
               </div>
 
               {/* UPDATE STATUS */}
-              {selected.orderStatus !== "DELIVERED" && selected.orderStatus !== "CANCELLED" && (
+              {
+               selected.orderStatus !== "CANCELLED" &&
+               selected.orderStatus !== "COMPLETED" &&
+               selected.orderStatus !== "RETURNED" && (
                 <div className="space-y-3 pt-4 border-t">
                   <h3 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
                     <RefreshCw className="w-4 h-4" />
@@ -596,28 +628,52 @@ export default function OrderPage() {
 }
 
 /* ================= TIMELINE - GHN STYLE ================= */
-function OrderTimeline({ status }: { status?: OrderStatus }) {
+function OrderTimeline({ status, payStatus }: { status?: OrderStatus; payStatus?: PayStatus }) {
   // Define order flow inside component to access OrderStatus
-
-  const timelineStatusConfig: Record<OrderStatus, { color: string; bg: string; icon: React.ElementType }> = {
+  const timelineStatusConfig: Record<
+    OrderStatus,
+    { color: string; bg: string; icon: React.ElementType }
+  > = {
     PENDING: { color: "text-yellow-600", bg: "bg-yellow-100", icon: Clock },
-    CONFIRMATION: { color: "text-yellow-600", bg: "bg-yellow-100", icon: Clock },
-    PAID: { color: "text-blue-600", bg: "bg-blue-100", icon: CreditCard },
+
     CONFIRMED: { color: "text-indigo-600", bg: "bg-indigo-100", icon: Package },
+
+    PROCESSING: { color: "text-purple-600", bg: "bg-purple-100", icon: Loader2 },
+
+    PREPARING: { color: "text-cyan-600", bg: "bg-cyan-100", icon: PackageSearch },
+
     SHIPPING: { color: "text-orange-600", bg: "bg-orange-100", icon: Truck },
+
     DELIVERED: { color: "text-green-600", bg: "bg-green-100", icon: CheckCircle },
+
+    COMPLETED: { color: "text-emerald-600", bg: "bg-emerald-100", icon: BadgeCheck },
+
     CANCELLED: { color: "text-red-600", bg: "bg-red-100", icon: XCircle },
+
+    RETURNED: { color: "text-gray-600", bg: "bg-gray-100", icon: RotateCcw },
   };
 
   const currentIndex = status ? timelineFlow.indexOf(status) : -1;
   const isCancelled = status === "CANCELLED";
+  const isReturned = status === "RETURNED";
+  const isCompleted = status === "COMPLETED";
 
   return (
     <div className="py-4">
+      {/* Payment Status Banner */}
+      <div className="mb-4 p-3 rounded-xl text-sm flex items-center gap-2">
+        <CreditCard className="w-5 h-5" />
+        <span className="text-gray-600">Trạng thái thanh toán:</span>
+        <span className={`font-semibold ${payStatus === "PAID" ? "text-green-600" : payStatus === "REFUNDED" ? "text-red-600" : "text-orange-600"}`}>
+          {payStatus ? PayStatusLabel[payStatus] : "Chưa thanh toán"}
+        </span>
+      </div>
+
+      {/* Order Status Timeline */}
       <div className="flex items-center justify-between relative">
         {/* Progress line */}
         <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 rounded-full" />
-        {!isCancelled && currentIndex >= 0 && (
+        {!isCancelled && !isReturned && currentIndex >= 0 && (
           <div
             className="absolute top-1/2 left-0 h-1 bg-green-500 -translate-y-1/2 rounded-full transition-all duration-500"
             style={{ width: `${(currentIndex / (timelineFlow.length - 1)) * 100}%` }}
@@ -635,10 +691,10 @@ function OrderTimeline({ status }: { status?: OrderStatus }) {
               <div key={s} className="flex flex-col items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive
-                      ? "bg-green-500 border-green-500 text-white"
-                      : isCurrent
-                        ? "bg-white border-green-500 text-green-500"
-                        : "bg-white border-gray-300 text-gray-400"
+                    ? "bg-green-500 border-green-500 text-white"
+                    : isCurrent
+                      ? "bg-white border-green-500 text-green-500"
+                      : "bg-white border-gray-300 text-gray-400"
                     }`}
                 >
                   <StatusIcon className="w-5 h-5" />
@@ -655,11 +711,25 @@ function OrderTimeline({ status }: { status?: OrderStatus }) {
         </div>
       </div>
 
-      {/* Cancelled status message */}
+      {/* Status Messages */}
       {isCancelled && (
         <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-center text-sm">
           <XCircle className="w-5 h-5 inline-block mr-2" />
           Đơn hàng đã bị hủy
+        </div>
+      )}
+
+      {isReturned && (
+        <div className="mt-4 p-3 bg-gray-50 text-gray-600 rounded-xl text-center text-sm">
+          <RotateCcw className="w-5 h-5 inline-block mr-2" />
+          Đơn hàng đã được hoàn trả
+        </div>
+      )}
+
+      {isCompleted && (
+        <div className="mt-4 p-3 bg-green-50 text-green-600 rounded-xl text-center text-sm">
+          <BadgeCheck className="w-5 h-5 inline-block mr-2" />
+          Đơn hàng đã hoàn thành - Không thể hủy/hoàn trả
         </div>
       )}
     </div>

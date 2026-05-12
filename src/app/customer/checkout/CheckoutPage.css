@@ -46,7 +46,7 @@
   background-color: white;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
 }
 
 .checkout-left h2 {
@@ -284,9 +284,8 @@
 
 /* PAYMENT METHOD STYLES */
 .payment-method-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px solid #f0f0f0;
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
 .payment-method-section h3 {
@@ -306,11 +305,11 @@
   display: flex;
   align-items: center;
   padding: 15px;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  
 }
 
 .payment-option:hover {

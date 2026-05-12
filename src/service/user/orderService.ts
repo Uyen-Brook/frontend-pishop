@@ -44,77 +44,69 @@ interface VNPayResponse {
   paymentUrl: string;
 }
 
-// Mock data
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 1001,
-    createdAt: "2024-01-15T10:30:00Z",
-    status: "DELIVERED",
-    totalAmount: 1250000,
-    items: [
-      {
-        productName: "iPhone 15 Pro Max",
-        image: "https://via.placeholder.com/60",
-        quantity: 1,
-        price: 1250000
-      }
-    ]
-  },
-  {
-    id: 1002,
-    createdAt: "2024-01-20T14:20:00Z",
-    status: "SHIPPING",
-    totalAmount: 890000,
-    items: [
-      {
-        productName: "AirPods Pro 2",
-        image: "https://via.placeholder.com/60",
-        quantity: 2,
-        price: 445000
-      }
-    ]
-  },
-  {
-    id: 1003,
-    createdAt: "2024-01-25T09:15:00Z",
-    status: "PENDING",
-    totalAmount: 450000,
-    items: [
-      {
-        productName: "Samsung Galaxy S24",
-        image: "https://via.placeholder.com/60",
-        quantity: 1,
-        price: 450000
-      }
-    ]
-  }
-];
 export const orderService = {
+  // =====================================================
+  // 1. CREATE ORDER
+  // =====================================================
+  async createOrder(
+    request: CreateOrderRequest
+  ): Promise<CreateOrderResponse> {
+    const res = await apiClient.post<CreateOrderResponse>(
+      "/user/orders/create",
+      request
+    );
+    return res.data;
+  },
+
+  // =====================================================
+  // 2. GET ORDERS BY ACCOUNT
+  // =====================================================
   async getUserOrders(): Promise<Order[]> {
     try {
       const accountId = useAuthStore.getState().user?.accountId;
-      const response = await apiClient.get<Order[]>(`/user/orders/${accountId}`);
-      return response.data || [];
+
+      if (!accountId) return [];
+
+      const res = await apiClient.get<Order[]>(
+        `/user/orders/by-account/${accountId}`
+      );
+
+      return res.data || [];
     } catch (error) {
       console.error("Error fetching orders:", error);
-      // Return mock data for testing
-      return MOCK_ORDERS;
+      return [];
     }
   },
 
+  // =====================================================
+  // 3. GET ORDER BY ID (⚠️ backend chưa có endpoint chuẩn)
+  // =====================================================
   async getOrderById(id: number): Promise<Order | null> {
     try {
-      const response = await apiClient.get<Order>(`/user/orders/${id}`);
-      return response.data || null;
+      const res = await apiClient.get<Order>(
+        `/user/orders/${id}`
+      );
+      return res.data || null;
     } catch (error) {
       console.error("Error fetching order:", error);
       return null;
     }
   },
 
-  async cancelOrder(id: number): Promise<boolean> {
+  // =====================================================
+  // 4. CANCEL ORDER (FIXED theo backend CancelOrderRequest)
+  // =====================================================
+  async cancelOrder(orderId: number): Promise<boolean> {
     try {
-      await apiClient.put(`/user/orders/${id}/cancel`);
+      const accountId = useAuthStore.getState().user?.accountId;
+
+      if (!accountId) return false;
+
+      await apiClient.post("/user/orders/cancel", {
+        orderId,
+        accountId,
+      });
+
       return true;
     } catch (error) {
       console.error("Error canceling order:", error);
@@ -122,46 +114,149 @@ export const orderService = {
     }
   },
 
-  async createOrder(request: CreateOrderRequest): Promise<CreateOrderResponse | null> {
+  // =====================================================
+  // 5. VNPay
+  // =====================================================
+  async submitOrder(
+    orderId: number,
+    orderTotal: number,
+    orderInfo: string
+  ): Promise<string | null> {
     try {
-      const response = await apiClient.post<CreateOrderResponse>("/user/orders/create", request);
-      return response.data || null;
+      const res = await apiClient.post<VNPayResponse>(
+        "/public/submitOrder",
+        null,
+        {
+          params: {
+            orderId,
+            amount: orderTotal,
+            orderInfo,
+          },
+        }
+      );
+
+      return res.data.paymentUrl || null;
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("Error submitting order:", error);
       throw error;
     }
   },
 
-  async submitOrder(
-    orderTotal: number,
-    orderInfo: string
-  ): Promise<string | null> {
+  // =====================================================
+  // 6. FILTER BY STATUS (mapping backend endpoints)
+  // =====================================================
+  async getOrdersByStatus(status: string): Promise<Order[]> {
+    const res = await apiClient.get<Order[]>(
+      `/user/orders/by-status`,
+      { params: { status } }
+    );
+    return res.data;
+  },
 
-    try {
+  // =====================================================
+  // 7. PURCHASE HISTORY
+  // =====================================================
+  async getPurchaseHistory(): Promise<Order[]> {
+    const accountId = useAuthStore.getState().user?.accountId;
 
-      const response =
-        await apiClient.post<VNPayResponse>(
-          "/submitOrder",
-          null,
-          {
-            params: {
-              amount: orderTotal,
-              orderInfo: orderInfo,
-            },
-          }
-        );
+    if (!accountId) return [];
 
-      return response.data.paymentUrl || null;
+    const res = await apiClient.get<Order[]>(
+      `/user/orders/purchase-history/${accountId}`
+    );
 
-    } catch (error) {
+    return res.data;
+  },
 
-      console.error(
-        "Error submitting order for payment:",
-        error
-      );
+  // =====================================================
+  // 8. UNPAID BANK ORDERS
+  // =====================================================
+  async getUnpaidBankOrders(): Promise<Order[]> {
+    const accountId = useAuthStore.getState().user?.accountId;
 
-      throw error;
-    }
-  }
+    if (!accountId) return [];
 
-}
+    const res = await apiClient.get<Order[]>(
+      `/user/orders/unpaid-bank/${accountId}`
+    );
+
+    return res.data;
+  },
+
+  // =====================================================
+  // 9. WRAPPER STATUS HELPERS (clean frontend usage)
+  // =====================================================
+
+  getPendingOrders: () =>
+    orderService.getOrdersByStatus("PENDING"),
+
+  getConfirmedOrders: () =>
+    orderService.getOrdersByStatus("CONFIRMED"),
+
+  getProcessingOrders: () =>
+    orderService.getOrdersByStatus("PROCESSING"),
+
+  getPreparingOrders: () =>
+    orderService.getOrdersByStatus("PREPARING"),
+
+  getShippingOrders: () =>
+    orderService.getOrdersByStatus("SHIPPING"),
+
+  getDeliveredOrders: () =>
+    orderService.getOrdersByStatus("DELIVERED"),
+
+  getReturnedOrders: () =>
+    orderService.getOrdersByStatus("RETURNED"),
+
+  getCompletedOrders: () =>
+    orderService.getOrdersByStatus("COMPLETED"),
+
+  getCancelledOrders: () =>
+    orderService.getOrdersByStatus("CANCELLED"),
+};
+
+  // async createOrder(request: CreateOrderRequest): Promise<CreateOrderResponse | null> {
+  //   try {
+  //     const response = await apiClient.post<CreateOrderResponse>("/user/orders/create", request);
+  //     return response.data || null;
+  //   } catch (error) {
+  //     console.error("Error creating order:", error);
+  //     throw error;
+  //   }
+  // },
+
+//  async submitOrder(
+//   orderId: number,
+//   orderTotal: number,
+//   orderInfo: string
+// ): Promise<string | null> {
+
+//   try {
+
+//     const response =
+//       await apiClient.post<VNPayResponse>(
+//         "/public/submitOrder",
+//         null,
+//         {
+//           params: {
+//             orderId: orderId,
+//             amount: orderTotal,
+//             orderInfo: orderInfo,
+//           },
+//         }
+//       );
+
+//     return response.data.paymentUrl || null;
+
+//   } catch (error) {
+
+//     console.error(
+//       "Error submitting order for payment:",
+//       error
+//     );
+
+//     throw error;
+//   }
+
+
+

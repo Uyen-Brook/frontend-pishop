@@ -8,6 +8,7 @@ export const adminMenus = [
   { name: "Product", icon: "MdInventory", path: ROUTES.ADMIN_PRODUCTS},
   { name: "Order", icon: "MdShoppingCart", path: ROUTES.ADMIN_ORDERS },
   { name: "Account", icon: "MdPerson", path: ROUTES.ADMIN_ACCOUNT} , 
+  { name: "Slider", icon:"MdSlideshow", path: ROUTES.ADMIN_SLIDER}
 ];
 
 export default adminMenus;

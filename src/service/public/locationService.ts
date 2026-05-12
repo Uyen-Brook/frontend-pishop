@@ -25,7 +25,7 @@ class LocationService {
    */
   async getProvinces(): Promise<Province[]> {
     try {
-      const response = await apiClient.get<Province[]>("/location/provinces");
+      const response = await apiClient.get<Province[]>("/public/location/provinces");
       return response.data || [];
     } catch (error) {
       console.error("Error fetching provinces:", error);
@@ -38,7 +38,7 @@ class LocationService {
    */
   async getWardsByProvinceCode(provinceCode: string): Promise<Ward[]> {
     try {
-      const response = await apiClient.get<Ward[]>(`/location/wards/provinces/${provinceCode}`);
+      const response = await apiClient.get<Ward[]>(`/public/location/wards/provinces/${provinceCode}`);
       return response.data || [];
     } catch (error) {
       console.error("Error fetching wards:", error);
@@ -51,7 +51,7 @@ class LocationService {
    */
   async getProvinceByCode(code: string): Promise<Province | null> {
     try {
-      const response = await apiClient.get<Province>(`/locations/provinces/${code}`);
+      const response = await apiClient.get<Province>(`/public/locations/provinces/${code}`);
       return response.data || null;
     } catch (error) {
       console.error("Error fetching province:", error);
@@ -64,7 +64,7 @@ class LocationService {
    */
   async getWardByCode(code: string): Promise<Ward | null> {
     try {
-      const response = await apiClient.get<Ward>(`/locations/wards/code/${code}`);
+      const response = await apiClient.get<Ward>(`/public/locations/wards/code/${code}`);
       return response.data || null;
     } catch (error) {
       console.error("Error fetching ward:", error);

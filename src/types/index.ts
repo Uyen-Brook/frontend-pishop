@@ -55,12 +55,14 @@ export interface ProductSumaryResponse {
   categoryName: string;
   price: number;
   discountType: DiscountType;
-  discountValue: number | null;
+  discountValue: number;
   productStatus: ProductStatus;
   promotionName: string | null;
   quantity: number;
   supplierName: string;
   thumbnail: string;
+  createAt: string;
+  updateAt: string;
 }
 
 //  chi tiết 
@@ -171,22 +173,26 @@ export type ProductStatus =
 //  order status type
 export type OrderStatus =
   | "PENDING"
-  | "CONFIRMATION" // ✅ thêm mới
-  | "PAID"
   | "CONFIRMED"
+  | "PROCESSING"
+  | "PREPARING"
   | "SHIPPING"
   | "DELIVERED"
-  | "CANCELLED";
+  | "COMPLETED"
+  | "CANCELLED"
+  | "RETURNED";
 
 // Order status
 export const OrderStatusLabel: Record<OrderStatus, string> = {
-  PENDING: "Chờ thanh toán",
-  CONFIRMATION:"Chờ xác nhận",// ✅ thêm mới
-  PAID: "Đã thanh toán",
+  PENDING: "Chờ xác nhận",
   CONFIRMED: "Đã xác nhận",
+  PROCESSING: "Đang xử lý",
+  PREPARING: "Đang chuẩn bị hàng",
   SHIPPING: "Đang giao hàng",
   DELIVERED: "Đã giao hàng",
+  COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
+  RETURNED: "Hoàn trả",
 };
 // payment method
 export type PaymentMethod =
@@ -282,10 +288,12 @@ export interface SupplierDetailResponse {
 // phân trang
 export interface PageResponse<T> {
   content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  empty: boolean;
   first: boolean;
   last: boolean;
+  number: number;
+  numberOfElements: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }

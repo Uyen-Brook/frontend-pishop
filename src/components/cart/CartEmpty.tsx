@@ -6,7 +6,7 @@ const CartEmpty: React.FC = () => {
     <div className="cart-empty">
       <h2>Your cart is empty</h2>
       <p>Browse our menu to add delicious items to your cart</p>
-      <button className="btn-continue" onClick={() => window.location.href = ROUTES.HOME}>
+      <button className="btn-continue" onClick={() => window.location.href = ROUTES.PRODUCT}>
         Continue Shopping
       </button>
     </div>

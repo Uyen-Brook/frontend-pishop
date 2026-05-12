@@ -1,6 +1,6 @@
 import React from "react";
 import { AddressResponse } from "../../../../service/user/CustomerAddressService";
-import { Province, Ward } from "../../../../service//custommer/locationService";
+import { Province, Ward } from "../../../../service/public/locationService";
 interface AddressSectionProps {
   formData: {
     fullName: string;

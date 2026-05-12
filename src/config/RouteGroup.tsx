@@ -1,6 +1,7 @@
-import HomePage from "../app/public/home/homePage";
+
 import LoginPage from "../app/auth/login/page";
 import RegisterPage from "../app/auth/register/page";
+import HomePage from "../app/public/home/HomePage";
 
 import ProductDetailPage from "../app/customer/product/page";
 import AboutPage from "../app/public/about/AboutPage";
@@ -22,6 +23,8 @@ import CategoryPage from "../app/admin/category/CategoryPage";
 import AccountPage from "../app/admin/account/AccountPage";
 import ProfileAddressPage from "../app/customer/profile/address/AddressManagement";
 import OrderPage from "../app/admin/order/OrderPage";
+import ProductPage from "../app/public/product/ProductPage";
+import SliderManagement from "../app/admin/slider/SliderManagement";
 
 
 export interface AppRoute {
@@ -34,7 +37,8 @@ export const authRoutes: AppRoute[]=[
   { path: ROUTES.REGISTER, element: <RegisterPage /> },
 ]
 export const publicRoutes: AppRoute[] = [
-  { path: ROUTES.HOME, element: <HomePage /> },
+  { path: ROUTES.HOME, element: <HomePage/>},
+  { path: ROUTES.PRODUCT, element: <ProductPage /> },
   { path: ROUTES.PRODUCT_DETAIL, element: <ProductDetailPage /> },
   { path: ROUTES.ABOUT, element: <AboutPage /> },
   { path: ROUTES.RETURN_POLICY, element: <ReturnPolicyPage /> }
@@ -52,7 +56,8 @@ export const adminRoutes: AppRoute[] = [
   { path: ROUTES.ADMIN_BRANDS, element: <AdminBrandsPage /> },
   { path: ROUTES.ADMIN_SUPPLIER, element: <SupplierManagementPage /> },
   { path: ROUTES.ADMIN_CATEGORY, element: <CategoryPage/> },
-  { path: ROUTES.ADMIN_ACCOUNT, element: < AccountPage/>}
+  { path: ROUTES.ADMIN_ACCOUNT, element: < AccountPage/>},
+  { path: ROUTES.ADMIN_SLIDER, element: <SliderManagement/> }
   // { path: ROUTES.ADMIN_ORDERS, element: <AdminOrdersPage /> },
   // { path: ROUTES.ADMIN_CUSTOMERS, element: <AdminCustomersPage /> }
 ];

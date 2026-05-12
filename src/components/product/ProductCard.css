@@ -136,7 +136,8 @@
 }
 
 .add-to-cart:disabled {
-  background: #cccccc;
+  background: #f0f0f0;
+   color: #333;
   cursor: not-allowed;
 }
 

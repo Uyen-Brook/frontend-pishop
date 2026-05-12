@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { orderService, Order } from "../../../../service/user/orderService";
+import { OrderStatusLabel, OrderStatus } from "../../../../types";
 
 export default function ProfileOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -27,31 +28,50 @@ export default function ProfileOrdersPage() {
         return "bg-yellow-100 text-yellow-700";
       case "CONFIRMED":
         return "bg-blue-100 text-blue-700";
-      case "SHIPPING":
+      case "PROCESSING":
         return "bg-purple-100 text-purple-700";
+      case "PREPARING":
+        return "bg-cyan-100 text-cyan-700";
+      case "SHIPPING":
+        return "bg-orange-100 text-orange-700";
       case "DELIVERED":
         return "bg-green-100 text-green-700";
+      case "COMPLETED":
+        return "bg-emerald-100 text-emerald-700";
       case "CANCELLED":
         return "bg-red-100 text-red-700";
+      case "RETURNED":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "Chờ xác nhận";
-      case "CONFIRMED":
-        return "Đã xác nhận";
-      case "SHIPPING":
-        return "Đang giao";
-      case "DELIVERED":
-        return "Đã giao";
-      case "CANCELLED":
-        return "Đã hủy";
-      default:
-        return status;
+    if (status in OrderStatusLabel) {
+      return OrderStatusLabel[status as OrderStatus];
+    }
+    return status;
+  };
+
+  const canCancel = (status: string) => {
+    return status === "PENDING" || status === "CONFIRMED";
+  };
+
+  const handleCancelOrder = async (orderId: number) => {
+    if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
+
+    try {
+      const success = await orderService.cancelOrder(orderId);
+      if (success) {
+        alert("Đã hủy đơn hàng thành công!");
+        loadOrders();
+      } else {
+        alert("Hủy đơn hàng thất bại");
+      }
+    } catch (err) {
+      console.error("Lỗi hủy đơn hàng", err);
+      alert("Có lỗi xảy ra khi hủy đơn hàng");
     }
   };
 
@@ -82,7 +102,7 @@ export default function ProfileOrdersPage() {
                   {getStatusText(order.status)}
                 </span>
               </div>
-              
+
               <div className="p-4">
                 {order.items?.map((item, index) => (
                   <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
@@ -102,13 +122,32 @@ export default function ProfileOrdersPage() {
                     </span>
                   </div>
                 ))}
-                
+
                 <div className="flex justify-between items-center mt-4 pt-4 border-t">
                   <span className="text-gray-600">Tổng cộng:</span>
                   <span className="text-xl font-semibold text-red-500">
                     {order.totalAmount?.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
+
+                {canCancel(order.status) && (
+                  <div className="mt-4 pt-4 border-t">
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Hủy đơn hàng
+                    </button>
+                  </div>
+                )}
+
+                {order.status === "COMPLETED" && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-green-600">
+                      Đơn hàng đã hoàn thành - Không thể hủy/hoàn trả
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ))}
